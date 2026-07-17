@@ -14,6 +14,16 @@ const presets = {
 };
 
 const operatorEvents = [];
+const feishuEvents = [];
+
+const feishuConfig = {
+  connected: false,
+  appName: "合成氨 AI 调控师",
+  targetChat: "合成氨当班调度群",
+  approvalName: "合成氨负荷调整审批",
+  approvalCode: "NH3_LOAD_ADJUSTMENT",
+  callbackEndpoint: "/api/feishu/events"
+};
 
 const scheduleColors = {
   synth: "#2477b3",
@@ -369,6 +379,70 @@ function buildKnowledgeLoop(plan) {
   ];
 }
 
+function buildFeishuCard(plan, text) {
+  const approval = plan.risk > 55 ? "班长 + 调度主管双确认" : "班长确认";
+  const warning = plan.risk > 70 || plan.confidence < 75 ? "低置信/高风险，仅允许作为备选建议" : "可进入当班确认流程";
+  return {
+    title: `${text.mode}｜合成氨负荷建议 ${plan.load}%`,
+    summary: text.title,
+    fields: [
+      { label: "目标群", value: feishuConfig.targetChat },
+      { label: "日产氨", value: `${plan.nh3.toLocaleString()} t` },
+      { label: "吨氨收益", value: `${plan.margin > 0 ? "+" : ""}${plan.margin}%` },
+      { label: "风险指数", value: plan.risk },
+      { label: "审批要求", value: approval },
+      { label: "执行边界", value: warning }
+    ],
+    actions: ["确认采纳", "发起审批", "查看约束", "记录未采纳原因"]
+  };
+}
+
+function buildFeishuApproval(plan, text) {
+  return [
+    { label: "审批定义", value: `${feishuConfig.approvalName}（${feishuConfig.approvalCode}）` },
+    { label: "申请事项", value: `${text.mode}：合成回路调整至 ${plan.load}%` },
+    { label: "业务理由", value: text.title },
+    { label: "关键约束", value: `风险 ${plan.risk}，置信度 ${plan.confidence}%，库存安全 ${plan.stock}%` },
+    { label: "回写范围", value: "仅 MES 计划、交接摘要、复盘记录；不写 DCS/SIS 控制参数" },
+    { label: "回调事件", value: "审批通过、审批驳回、卡片按钮点击、复盘提交" }
+  ];
+}
+
+function pushFeishuEvent(action, plan, text) {
+  const now = new Date();
+  const stamp = now.toLocaleTimeString("zh-CN", { hour12: false });
+  const templates = {
+    card: `已生成飞书互动卡片草稿：发送至“${feishuConfig.targetChat}”，内容包含负荷 ${plan.load}%、风险 ${plan.risk}、审批要求和约束解释。`,
+    approval: `已生成审批单草稿：${feishuConfig.approvalName}，申请事项为“${text.mode}｜合成回路 ${plan.load}%”。`,
+    review: `已生成班后复盘同步草稿：记录采纳状态、实际偏差、吨氨能耗、液氨库存和未采纳原因标签。`
+  };
+  feishuEvents.unshift({
+    title: `${stamp} ${action === "card" ? "生成群卡片" : action === "approval" ? "生成审批单" : "同步复盘"}`,
+    body: feishuConfig.connected ? templates[action] : `${templates[action]} 当前未配置飞书 App ID/Secret，仅本地演示，不会真实发送。`
+  });
+  if (feishuEvents.length > 5) feishuEvents.pop();
+}
+
+function renderFeishuIntegration(plan, text) {
+  const card = buildFeishuCard(plan, text);
+  const approval = buildFeishuApproval(plan, text);
+  document.getElementById("feishuStatus").textContent = feishuConfig.connected ? "已连接飞书" : "待授权接入";
+  document.getElementById("feishuCard").innerHTML = `
+    <strong>${card.title}</strong>
+    <p>${card.summary}</p>
+    <div class="feishu-fields">
+      ${card.fields.map(item => `<span><b>${item.label}</b>${item.value}</span>`).join("")}
+    </div>
+    <p>卡片按钮：${card.actions.join(" / ")}</p>
+  `;
+  document.getElementById("feishuApproval").innerHTML = approval.map(item => {
+    return `<div><b>${item.label}</b>${item.value}</div>`;
+  }).join("");
+  document.getElementById("feishuEvents").innerHTML = feishuEvents.map(item => {
+    return `<div><b>${item.title}</b>${item.body}</div>`;
+  }).join("");
+}
+
 function buildPilotChecklist(plan) {
   const mustReview = plan.risk > 55 || state.health < 65;
   return [
@@ -498,13 +572,24 @@ function buildOperatorSummary(plan, text) {
 function pushOperatorEvent(action, plan, text) {
   const now = new Date();
   const stamp = now.toLocaleTimeString("zh-CN", { hour12: false });
+  const labels = {
+    recalc: "重算计划",
+    handover: "生成交接摘要",
+    accept: "标记采纳",
+    feishuCard: "生成飞书卡片",
+    feishuApproval: "生成飞书审批",
+    feishuReview: "同步飞书复盘"
+  };
   const templates = {
     recalc: `已按当前订单、库存、能价和设备健康重算：${text.mode}，建议负荷 ${plan.load}%，风险 ${plan.risk}。`,
     handover: `交接摘要：优先保障高优订单；关注库存 ${plan.stock}%、风险 ${plan.risk}；未确认前不回写控制参数。`,
-    accept: `已记录“拟采纳”状态：需保留输入快照、审批人、实际执行偏差和班后复盘结论。`
+    accept: `已记录“拟采纳”状态：需保留输入快照、审批人、实际执行偏差和班后复盘结论。`,
+    feishuCard: `已生成飞书群卡片草稿：可发送给${feishuConfig.targetChat}进行班组确认。`,
+    feishuApproval: `已生成飞书审批草稿：待填入真实 approval_code 后可创建审批实例。`,
+    feishuReview: `已生成飞书复盘草稿：用于沉淀采纳/未采纳原因和执行偏差。`
   };
   operatorEvents.unshift({
-    title: `${stamp} ${action === "recalc" ? "重算计划" : action === "handover" ? "生成交接摘要" : "标记采纳"}`,
+    title: `${stamp} ${labels[action] || "操作"}`,
     body: templates[action]
   });
   if (operatorEvents.length > 6) operatorEvents.pop();
@@ -597,6 +682,7 @@ function render() {
   document.getElementById("learningMode").textContent = plan.risk > 60 ? "重点复盘" : "持续沉淀";
   document.getElementById("pilotMode").textContent = plan.risk > 55 ? "先影子运行" : "可试点评估";
   document.getElementById("acceptanceMode").textContent = plan.confidence < 78 ? "谨慎试点" : "保守口径";
+  renderFeishuIntegration(plan, text);
   renderOperatorLog();
 }
 
@@ -622,10 +708,24 @@ document.querySelectorAll("[data-action]").forEach(button => {
   button.addEventListener("click", event => {
     const plan = calcPlan();
     const text = strategy(plan);
-    pushOperatorEvent(event.target.dataset.action, plan, text);
+    const action = event.target.dataset.action;
+    pushOperatorEvent(action, plan, text);
+    if (action === "feishuCard") pushFeishuEvent("card", plan, text);
+    if (action === "feishuApproval") pushFeishuEvent("approval", plan, text);
+    if (action === "feishuReview") pushFeishuEvent("review", plan, text);
+    render();
+  });
+});
+
+document.querySelectorAll("[data-feishu-action]").forEach(button => {
+  button.addEventListener("click", event => {
+    const plan = calcPlan();
+    const text = strategy(plan);
+    pushFeishuEvent(event.target.dataset.feishuAction, plan, text);
     render();
   });
 });
 
 pushOperatorEvent("recalc", calcPlan(), strategy(calcPlan()));
+pushFeishuEvent("card", calcPlan(), strategy(calcPlan()));
 render();

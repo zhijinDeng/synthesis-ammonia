@@ -92,6 +92,9 @@
             <button type="button" data-action="recalc">重算计划</button>
             <button type="button" data-action="handover">交接摘要</button>
             <button type="button" data-action="accept">标记采纳</button>
+            <button type="button" data-action="feishuCard">飞书卡片</button>
+            <button type="button" data-action="feishuApproval">发起审批</button>
+            <button type="button" data-action="feishuReview">复盘同步</button>
           </div>
           <div id="operatorSummary" class="operator-summary"></div>
           <div id="operatorLog" class="operator-log" aria-live="polite"></div>
@@ -261,6 +264,32 @@
           </div>
         </div>
 
+        <div class="panel feishu-panel">
+          <div class="panel-title">
+            <span>飞书协同中心</span>
+            <strong id="feishuStatus">待授权接入</strong>
+          </div>
+          <div class="feishu-grid">
+            <section>
+              <h3>调度卡片预览</h3>
+              <div id="feishuCard" class="feishu-card"></div>
+              <div class="feishu-actions">
+                <button type="button" data-feishu-action="card">生成群卡片</button>
+                <button type="button" data-feishu-action="approval">生成审批单</button>
+                <button type="button" data-feishu-action="review">同步复盘</button>
+              </div>
+            </section>
+            <section>
+              <h3>审批字段</h3>
+              <div id="feishuApproval" class="feishu-approval"></div>
+            </section>
+            <section>
+              <h3>协同日志</h3>
+              <div id="feishuEvents" class="feishu-events" aria-live="polite"></div>
+            </section>
+          </div>
+        </div>
+
         <div class="two-col">
           <div class="panel">
             <div class="panel-title">
@@ -325,6 +354,19 @@
             <li>ERP：订单、交期、价格口径、客户优先级。</li>
             <li>DCS historian：负荷、温度、压力、流量、电耗、蒸汽摘要点。</li>
             <li>罐区/EAM：液氨库存、罐区压力、装车窗口、设备健康评分。</li>
+          </ul>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">
+            <span>飞书授权项</span>
+            <strong>上线前</strong>
+          </div>
+          <ul class="source-list">
+            <li>企业自建应用：App ID、App Secret、应用机器人能力。</li>
+            <li>消息范围：合成氨当班调度群、调度主管、设备与安环值班人。</li>
+            <li>审批定义：合成氨负荷调整审批 code 与表单字段。</li>
+            <li>事件回调：审批通过/驳回、卡片按钮点击、班后复盘提交。</li>
           </ul>
         </div>
       </aside>

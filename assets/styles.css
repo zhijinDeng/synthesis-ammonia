@@ -556,6 +556,94 @@ output {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.feishu-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.15fr) minmax(260px, 0.9fr) minmax(240px, 0.85fr);
+  gap: 16px;
+  padding: 16px;
+}
+
+.feishu-grid section {
+  min-width: 0;
+}
+
+.feishu-grid h3 {
+  margin: 0 0 10px;
+  color: var(--navy);
+  font-size: 15px;
+}
+
+.feishu-card,
+.feishu-approval,
+.feishu-events {
+  display: grid;
+  gap: 10px;
+}
+
+.feishu-card {
+  padding: 14px;
+  background: #f6fbff;
+  border: 1px solid #cfe1ef;
+  border-radius: 8px;
+}
+
+.feishu-card strong {
+  display: block;
+  color: var(--navy);
+  font-size: 17px;
+  line-height: 1.35;
+}
+
+.feishu-card p {
+  margin: 0;
+  color: #40586b;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.feishu-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.feishu-fields span,
+.feishu-approval div,
+.feishu-events div {
+  padding: 9px 10px;
+  background: #fff;
+  border: 1px solid #dfe8ef;
+  border-radius: 6px;
+  color: #40586b;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.feishu-fields b,
+.feishu-approval b,
+.feishu-events b {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--navy);
+  font-size: 13px;
+}
+
+.feishu-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.feishu-actions button {
+  min-height: 36px;
+  color: #102132;
+  background: #eef6fb;
+  border: 1px solid #cddce8;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
 .status-pill {
   display: inline-flex;
   align-items: center;
@@ -683,6 +771,7 @@ output {
   .constraint-list,
   .framework-grid,
   .playbook-list,
+  .feishu-grid,
   .scenario-kpis,
   .right-rail {
     grid-template-columns: 1fr;
@@ -693,6 +782,11 @@ output {
   }
 
   .operator-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .feishu-actions,
+  .feishu-fields {
     grid-template-columns: 1fr;
   }
 }
@@ -716,5 +810,9 @@ output {
 
   .controls input {
     grid-column: 1 / -1;
+  }
+
+  .operator-actions {
+    grid-template-columns: 1fr;
   }
 }

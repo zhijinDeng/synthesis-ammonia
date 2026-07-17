@@ -1,0 +1,54 @@
+{
+  "site": "Yingcheng integrated salt-alkali-fertilizer base",
+  "company_context": {
+    "company": "成都云图控股股份有限公司",
+    "strategic_fit": "70 万吨/年合成氨项目补齐氮肥原料，联动纯碱、氯化铵、尿浆溶液、复合肥和水溶肥，核心价值是提升原料自给率、降低外采波动并支撑盐-碱-肥循环产业链。"
+  },
+  "units": [
+    {
+      "id": "gasification",
+      "name": "制氢/原料气",
+      "capacity_tpd": 2300,
+      "constraints": ["天然气或煤气化负荷", "蒸汽平衡", "CO2 分离", "氢氮比"]
+    },
+    {
+      "id": "synthesis",
+      "name": "氨合成回路",
+      "capacity_tpd": 1950,
+      "constraints": ["合成塔入口温度", "循环压缩机负荷", "催化剂床层温升", "50%-100%安全负荷窗口"]
+    },
+    {
+      "id": "storage",
+      "name": "液氨储运",
+      "capacity_t": 12000,
+      "constraints": ["安全库存", "罐区压力", "外售与下游切换"]
+    },
+    {
+      "id": "downstream",
+      "name": "尿浆/复合肥/联碱协同",
+      "capacity_tpd": 3100,
+      "constraints": ["尿浆需求", "氯化铵平衡", "复合肥订单交期", "包装与物流能力"]
+    }
+  ],
+  "orders": [
+    {"product": "95% 尿浆溶液", "priority": "high", "demand_t": 3200, "due_hours": 36},
+    {"product": "复合肥", "priority": "high", "demand_t": 6200, "due_hours": 72},
+    {"product": "液氨外售", "priority": "medium", "demand_t": 900, "due_hours": 48},
+    {"product": "联碱氯化铵配套", "priority": "medium", "demand_t": 1800, "due_hours": 60}
+  ],
+  "default_scenario": {
+    "demand_pressure": 76,
+    "energy_price": 64,
+    "equipment_health": 82,
+    "ammonia_inventory": 58,
+    "green_power": 34,
+    "market_volatility": 61
+  },
+  "kpi_formula_notes": {
+    "throughput": "由需求压力、设备健康、库存缺口和能源成本综合估算。",
+    "margin": "以负荷、能源价格和下游高优订单满足率估算。",
+    "carbon": "根据能源负荷和绿电/绿氢占比估算相对减排。",
+    "risk": "由低库存、设备健康、能源价格和市场波动触发。"
+  }
+}
+

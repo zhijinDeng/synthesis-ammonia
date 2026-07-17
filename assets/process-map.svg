@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="520" viewBox="0 0 1080 520" role="img" aria-label="合成氨生产调度专家流程图">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#0d1b2a"/>
+      <stop offset="1" stop-color="#16324f"/>
+    </linearGradient>
+    <linearGradient id="unit" x1="0" x2="1">
+      <stop offset="0" stop-color="#e9f2ff"/>
+      <stop offset="1" stop-color="#c5e4d6"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#03101c" flood-opacity=".28"/>
+    </filter>
+  </defs>
+  <rect width="1080" height="520" rx="0" fill="url(#bg)"/>
+  <g opacity=".18">
+    <path d="M0 410 C160 330 260 500 430 390 C610 272 720 448 1080 300" fill="none" stroke="#b8f3ff" stroke-width="4"/>
+    <path d="M0 116 C180 72 322 176 498 108 C724 18 802 120 1080 82" fill="none" stroke="#f7d87a" stroke-width="3"/>
+  </g>
+  <text x="56" y="62" fill="#ffffff" font-size="30" font-family="Microsoft YaHei, Arial" font-weight="700">AI 生产调度专家：盐-碱-肥协同闭环</text>
+  <text x="58" y="98" fill="#bcd7ea" font-size="16" font-family="Microsoft YaHei, Arial">将 DCS/MES/ERP/LIMS/设备健康数据融合为可解释排产、风险边界和收益测算</text>
+  <g filter="url(#shadow)" font-family="Microsoft YaHei, Arial">
+    <g transform="translate(62 162)">
+      <rect width="172" height="120" rx="8" fill="url(#unit)"/>
+      <text x="22" y="42" fill="#0b2235" font-size="21" font-weight="700">原料气/制氢</text>
+      <text x="22" y="74" fill="#294355" font-size="14">天然气/煤气化</text>
+      <text x="22" y="96" fill="#294355" font-size="14">蒸汽与 CO2 分离</text>
+    </g>
+    <g transform="translate(318 162)">
+      <rect width="190" height="120" rx="8" fill="url(#unit)"/>
+      <text x="22" y="42" fill="#0b2235" font-size="21" font-weight="700">氨合成回路</text>
+      <text x="22" y="74" fill="#294355" font-size="14">压缩机 / 合成塔</text>
+      <text x="22" y="96" fill="#294355" font-size="14">催化剂床层温升</text>
+    </g>
+    <g transform="translate(596 162)">
+      <rect width="172" height="120" rx="8" fill="url(#unit)"/>
+      <text x="22" y="42" fill="#0b2235" font-size="21" font-weight="700">液氨罐区</text>
+      <text x="22" y="74" fill="#294355" font-size="14">安全库存</text>
+      <text x="22" y="96" fill="#294355" font-size="14">外售/下游切换</text>
+    </g>
+    <g transform="translate(852 162)">
+      <rect width="172" height="120" rx="8" fill="url(#unit)"/>
+      <text x="22" y="42" fill="#0b2235" font-size="21" font-weight="700">复合肥协同</text>
+      <text x="22" y="74" fill="#294355" font-size="14">尿浆 / 氯化铵</text>
+      <text x="22" y="96" fill="#294355" font-size="14">订单与物流</text>
+    </g>
+  </g>
+  <g fill="none" stroke="#f9d568" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M238 222 H312"/>
+    <path d="M512 222 H590"/>
+    <path d="M772 222 H846"/>
+  </g>
+  <g fill="#f9d568">
+    <path d="M312 222 l-12 -8 v16z"/>
+    <path d="M590 222 l-12 -8 v16z"/>
+    <path d="M846 222 l-12 -8 v16z"/>
+  </g>
+  <g font-family="Microsoft YaHei, Arial">
+    <rect x="146" y="344" width="788" height="86" rx="8" fill="#ffffff" opacity=".92"/>
+    <text x="184" y="378" fill="#0b2235" font-size="18" font-weight="700">AI 调度层</text>
+    <text x="184" y="407" fill="#315066" font-size="15">预测需求与能价 -> 数字孪生校验约束 -> 优化器排班 -> 大模型解释 -> 人机确认 -> MES 回写</text>
+    <circle cx="696" cy="386" r="18" fill="#2fbf71"/>
+    <circle cx="754" cy="386" r="18" fill="#4a90e2"/>
+    <circle cx="812" cy="386" r="18" fill="#f4b942"/>
+    <circle cx="870" cy="386" r="18" fill="#e95f5c"/>
+  </g>
+</svg>
+

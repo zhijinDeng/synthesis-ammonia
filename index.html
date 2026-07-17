@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>合成氨 AI 生产调度专家</title>
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Yuntu Ammonia Scheduling Expert</p>
+        <h1>合成氨 AI 生产调度专家</h1>
+      </div>
+      <div class="top-actions" aria-label="场景操作">
+        <button id="nightPlan" type="button">夜间稳态</button>
+        <button id="peakPlan" type="button">订单冲刺</button>
+        <button id="safePlan" type="button">设备保守</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="left-rail" aria-label="调度输入">
+        <div class="panel">
+          <div class="panel-title">
+            <span>装置态势</span>
+            <strong id="plantState">稳态优化</strong>
+          </div>
+          <div class="metric-grid">
+            <article>
+              <span>建议负荷</span>
+              <strong id="loadKpi">86%</strong>
+            </article>
+            <article>
+              <span>日产氨</span>
+              <strong id="nh3Kpi">1,677 t</strong>
+            </article>
+            <article>
+              <span>毛利提升</span>
+              <strong id="marginKpi">+7.8%</strong>
+            </article>
+            <article>
+              <span>风险指数</span>
+              <strong id="riskKpi">32</strong>
+            </article>
+          </div>
+        </div>
+
+        <div class="panel controls">
+          <div class="panel-title">
+            <span>调度变量</span>
+            <strong>24h</strong>
+          </div>
+          <label>
+            <span>下游订单压力</span>
+            <input data-key="demand" type="range" min="0" max="100" value="76" />
+            <output id="demandOut">76</output>
+          </label>
+          <label>
+            <span>能源价格压力</span>
+            <input data-key="energy" type="range" min="0" max="100" value="64" />
+            <output id="energyOut">64</output>
+          </label>
+          <label>
+            <span>关键设备健康</span>
+            <input data-key="health" type="range" min="0" max="100" value="82" />
+            <output id="healthOut">82</output>
+          </label>
+          <label>
+            <span>液氨库存水位</span>
+            <input data-key="inventory" type="range" min="0" max="100" value="58" />
+            <output id="inventoryOut">58</output>
+          </label>
+          <label>
+            <span>绿电/绿氢可用</span>
+            <input data-key="green" type="range" min="0" max="100" value="34" />
+            <output id="greenOut">34</output>
+          </label>
+          <label>
+            <span>市场波动</span>
+            <input data-key="market" type="range" min="0" max="100" value="61" />
+            <output id="marketOut">61</output>
+          </label>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">
+            <span>开题报告</span>
+            <strong>Part 1</strong>
+          </div>
+          <p class="brief">
+            命题意图是考察候选人能否把合成氨现场从“单装置稳产”提升为“全链路经营优化”问题。云图控股应城 70 万吨合成氨投产后，氨不只是产品，更是联碱、尿浆、复合肥和氯化铵协同的枢纽原料；AI 调度专家应在安全边界内统筹订单、能耗、库存、设备健康与环保约束，输出可解释、可执行、可回写的班次方案。
+          </p>
+        </div>
+      </section>
+
+      <section class="main-stage">
+        <div class="visual-band">
+          <img src="assets/process-map.svg" alt="合成氨生产调度专家流程图" />
+        </div>
+
+        <div class="panel recommendation">
+          <div class="panel-title">
+            <span>AI 调度建议</span>
+            <strong id="confidence">置信度 88%</strong>
+          </div>
+          <div class="recommendation-grid">
+            <div>
+              <h2 id="strategyTitle">保持高负荷，优先保障尿浆与复合肥订单</h2>
+              <p id="strategyText">
+                当前订单压力高、设备状态良好，建议合成回路维持 86% 负荷，夜间避开高价电窗口补库存，白班向尿浆和复合肥线倾斜，液氨外售压到安全库存以上的弹性区间。
+              </p>
+            </div>
+            <div class="decision-stack" id="decisionStack"></div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-title">
+              <span>班次排产</span>
+              <strong id="shiftMode">经济最优</strong>
+            </div>
+            <div id="gantt" class="gantt" aria-label="班次排产图"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-title">
+              <span>价值测算</span>
+              <strong>模拟</strong>
+            </div>
+            <div class="bars">
+              <div>
+                <span>订单满足率</span>
+                <b id="barOrder"></b>
+                <strong id="orderText">92%</strong>
+              </div>
+              <div>
+                <span>能耗优化</span>
+                <b id="barEnergy"></b>
+                <strong id="energyText">6%</strong>
+              </div>
+              <div>
+                <span>碳强度下降</span>
+                <b id="barCarbon"></b>
+                <strong id="carbonText">4%</strong>
+              </div>
+              <div>
+                <span>库存安全</span>
+                <b id="barStock"></b>
+                <strong id="stockText">78%</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">
+            <span>约束解释</span>
+            <strong id="constraintLevel">4 条关注</strong>
+          </div>
+          <div id="constraintList" class="constraint-list"></div>
+        </div>
+      </section>
+
+      <aside class="right-rail" aria-label="方案设计">
+        <div class="panel">
+          <div class="panel-title">
+            <span>整体方案</span>
+            <strong>Part 2</strong>
+          </div>
+          <ol class="plan-list">
+            <li>数据底座：接入 DCS、MES、ERP、LIMS、设备点检、罐区和物流数据，形成装置知识图谱。</li>
+            <li>预测层：预测订单、能价、库存消耗、设备劣化和催化剂活性，提前识别瓶颈。</li>
+            <li>优化层：用数字孪生约束安全边界，用混合整数优化和 MPC 生成班次级排产。</li>
+            <li>专家层：大模型解释“为什么这样排”，给班长可追溯的风险、收益和替代方案。</li>
+            <li>闭环层：人机确认后回写 MES，并用实际偏差持续校准模型。</li>
+          </ol>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">
+            <span>核心创新</span>
+            <strong>区别点</strong>
+          </div>
+          <div class="tags">
+            <span>全链路调度</span>
+            <span>可解释 AI</span>
+            <span>动态安全边界</span>
+            <span>班组协同</span>
+            <span>能碳成本同算</span>
+            <span>知识库问答</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">
+            <span>资料依据</span>
+            <strong>6 类</strong>
+          </div>
+          <ul class="source-list">
+            <li>IEA：氨行业约占全球终端能源消费 2%，直接排放约 450 Mt CO2。</li>
+            <li>云图控股：应城 70 万吨合成氨及尿浆项目已试生产并稳定运行。</li>
+            <li>学术研究：合成回路可在 50%-100% 负荷区间进行柔性控制研究。</li>
+            <li>工业实践：数字孪生与闭环优化适合高能耗连续流程装置。</li>
+          </ul>
+        </div>
+      </aside>
+    </main>
+
+    <script src="assets/app.js"></script>
+  </body>
+</html>
+

@@ -11,6 +11,7 @@
 - `data/plant-model.json`：示例装置、订单、约束和 KPI 数据模型。
 - `docs/research-brief.md`：开题报告 part 1、part 2、出题意图和资料依据。
 - `docs/architecture.md`：平台架构、核心模块、落地路线和推广价值。
+- `docs/optimization-roadmap.md`：本轮优化补充的大框架、评审追问点和实施优先级。
 
 ## 使用方法
 
@@ -33,6 +34,13 @@ python -m http.server 4173
 
 平台把合成氨装置看作“能源、设备、库存、下游需求、安全环保”共同约束下的动态排产问题。AI 不是替代班长，而是把 DCS/MES/ERP/LIMS/设备状态和市场订单融合成一个可解释的调度专家，给出班次级建议、风险边界、经济收益和回写闭环。
 
+## 本轮优化补强
+
+- 前端新增“平台总框架、数据就绪度、模型治理、异常工况预案”模块。
+- 方案新增数据治理、模型漂移、审批留痕、灰度上线、安全降级和组织协同设计。
+- 交互逻辑会根据订单、能价、设备健康、库存等变量动态调整治理状态和应急建议。
+- 评审表达从“一个 AI 调度页面”升级为“可上线、可审计、可复盘的工业 AI 平台”。
+
 ## 主要资料依据
 
 - IEA, [Ammonia Technology Roadmap](https://www.iea.org/reports/ammonia-technology-roadmap)
@@ -40,4 +48,3 @@ python -m http.server 4173
 - 云图控股券商研究材料，来源包括 [云图控股官网研究报告](https://www.wintrueholding.com/static/upload/file/20260417/1776394254161882.pdf)
 - Kong 等，Nonlinear Model Predictive Control of Flexible Ammonia Production, 2024 preprint
 - ACS IECR, Dynamic Simulation and Optimization for Load Regulation of Haber-Bosch Process
-

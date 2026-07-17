@@ -99,6 +99,39 @@
           <img src="assets/process-map.svg" alt="合成氨生产调度专家流程图" />
         </div>
 
+        <div class="panel framework-panel">
+          <div class="panel-title">
+            <span>平台总框架</span>
+            <strong id="frameworkScore">覆盖度 86%</strong>
+          </div>
+          <div class="framework-grid">
+            <article>
+              <b>数据底座</b>
+              <span>DCS/MES/ERP/LIMS/设备/物流统一成一张调度事实表。</span>
+            </article>
+            <article>
+              <b>预测模型</b>
+              <span>订单、能价、库存、设备健康和催化剂活性滚动预测。</span>
+            </article>
+            <article>
+              <b>约束孪生</b>
+              <span>合成塔、压缩机、罐区、蒸汽平衡和安全库存硬校验。</span>
+            </article>
+            <article>
+              <b>优化求解</b>
+              <span>MILP 做订单分配，MPC 做连续负荷，规则引擎守现场边界。</span>
+            </article>
+            <article>
+              <b>专家解释</b>
+              <span>把方案转成班前会语言，给出收益、风险和替代方案。</span>
+            </article>
+            <article>
+              <b>闭环治理</b>
+              <span>人工确认后回写 MES，偏差复盘反哺模型与知识库。</span>
+            </article>
+          </div>
+        </div>
+
         <div class="panel recommendation">
           <div class="panel-title">
             <span>AI 调度建议</span>
@@ -161,6 +194,32 @@
           </div>
           <div id="constraintList" class="constraint-list"></div>
         </div>
+
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-title">
+              <span>数据就绪度</span>
+              <strong id="dataScore">82%</strong>
+            </div>
+            <div id="dataReadiness" class="readiness-list"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-title">
+              <span>模型治理</span>
+              <strong id="governanceMode">人机确认</strong>
+            </div>
+            <div id="governanceList" class="governance-list"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">
+            <span>异常工况预案</span>
+            <strong id="playbookMode">动态生成</strong>
+          </div>
+          <div id="playbookList" class="playbook-list"></div>
+        </div>
       </section>
 
       <aside class="right-rail" aria-label="方案设计">
@@ -175,6 +234,7 @@
             <li>优化层：用数字孪生约束安全边界，用混合整数优化和 MPC 生成班次级排产。</li>
             <li>专家层：大模型解释“为什么这样排”，给班长可追溯的风险、收益和替代方案。</li>
             <li>闭环层：人机确认后回写 MES，并用实际偏差持续校准模型。</li>
+            <li>治理层：记录数据版本、模型版本、审批人、执行偏差和复盘结论，满足工业 AI 可追溯要求。</li>
           </ol>
         </div>
 
@@ -190,7 +250,22 @@
             <span>班组协同</span>
             <span>能碳成本同算</span>
             <span>知识库问答</span>
+            <span>模型漂移监控</span>
+            <span>应急预案生成</span>
           </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">
+            <span>新增框架</span>
+            <strong>补强项</strong>
+          </div>
+          <ul class="source-list">
+            <li>数据治理：主数据编码、采样频率、异常值、缺失值和班次口径统一。</li>
+            <li>上线治理：模型灰度、置信阈值、漂移告警、审批留痕和回滚机制。</li>
+            <li>安全治理：AI 只给建议，硬约束由 SIS/DCS/MES 规则和人工确认守住。</li>
+            <li>组织治理：调度、设备、能源、经营、安环共享同一套收益和风险解释。</li>
+          </ul>
         </div>
 
         <div class="panel">
@@ -211,4 +286,3 @@
     <script src="assets/app.js"></script>
   </body>
 </html>
-

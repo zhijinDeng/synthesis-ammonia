@@ -179,6 +179,104 @@ function buildConstraints(plan) {
   });
 }
 
+function buildDataReadiness(plan) {
+  const signalScore = clamp(72 + state.health * 0.08 + state.inventory * 0.06 - state.market * 0.05, 55, 96);
+  const syncScore = clamp(68 + state.demand * 0.05 + state.green * 0.07 - state.energy * 0.04, 52, 94);
+  const ruleScore = clamp(80 + state.health * 0.05 - Math.max(0, plan.risk - 55) * 0.2, 58, 98);
+  return [
+    {
+      title: "实时信号完整性",
+      body: "重点看合成塔温升、循环压缩机、电耗、蒸汽、罐区压力和关键阀位是否连续可用。",
+      score: Math.round(signalScore)
+    },
+    {
+      title: "业务口径同步",
+      body: "订单优先级、产品编码、库存水位、外售合同和下游产线计划需要统一到班次口径。",
+      score: Math.round(syncScore)
+    },
+    {
+      title: "专家规则沉淀",
+      body: "把班长经验、安环红线、检修窗口、异常处置步骤做成可审计规则库。",
+      score: Math.round(ruleScore)
+    }
+  ];
+}
+
+function buildGovernance(plan) {
+  const drift = plan.risk > 62 || state.market > 75;
+  const approval = plan.risk > 55 ? "班长 + 调度主管双确认" : "班长确认";
+  return [
+    {
+      title: "置信阈值",
+      body: `当前置信度 ${plan.confidence}%。低于 75% 时只允许生成备选方案，不允许回写 MES。`,
+      level: plan.confidence < 75 ? "warn" : "",
+      pill: plan.confidence < 75 ? "需复核" : "可建议"
+    },
+    {
+      title: "漂移监控",
+      body: drift ? "市场或风险波动较大，需要对订单预测和设备健康模型做班后偏差复盘。" : "当前预测输入稳定，保持日度偏差复盘即可。",
+      level: drift ? "warn" : "",
+      pill: drift ? "关注漂移" : "稳定"
+    },
+    {
+      title: "审批留痕",
+      body: `${approval}，记录版本号、输入快照、约束触发、采纳人和实际执行偏差。`,
+      level: plan.risk > 70 ? "danger" : "",
+      pill: approval
+    }
+  ];
+}
+
+function buildPlaybook(plan) {
+  const items = [
+    {
+      title: "压缩机健康下降",
+      body: "自动降低负荷上限，冻结液氨外售弹性订单，插入点检窗口，并提示备机/检修资源。",
+      level: state.health < 62 ? "danger" : ""
+    },
+    {
+      title: "液氨库存偏低",
+      body: "下游高优订单优先，外售降级为合同刚性部分，夜间低价窗口补安全库存。",
+      level: state.inventory < 50 ? "warn" : ""
+    },
+    {
+      title: "能源价格冲高",
+      body: "压缩高价窗口产量，将可延后订单转移到低价时段，用库存覆盖短时需求。",
+      level: state.energy > 75 ? "warn" : ""
+    },
+    {
+      title: "订单突然插单",
+      body: "重算订单优先级、交期罚金和下游毛利，输出原计划、插单计划和折中计划三案。",
+      level: state.demand > 86 ? "warn" : ""
+    },
+    {
+      title: "环保指标逼近",
+      body: "联动蒸汽、电耗、CO2 和绿电可用性，限制边际高排放产量并生成安环说明。",
+      level: state.green < 25 && plan.load > 85 ? "warn" : ""
+    },
+    {
+      title: "模型低置信",
+      body: "降级为规则推荐，要求人工复核，保留当前稳定方案并禁止自动回写。",
+      level: plan.confidence < 75 ? "danger" : ""
+    }
+  ];
+  return items;
+}
+
+function levelLabel(level) {
+  if (level === "danger") return "强关注";
+  if (level === "warn") return "需关注";
+  return "正常";
+}
+
+function renderItems(containerId, items, className) {
+  document.getElementById(containerId).innerHTML = items.map(item => {
+    const level = item.level || "";
+    const pill = item.pill || (item.score ? `${item.score}%` : levelLabel(level));
+    return `<div class="${className}"><b>${item.title}</b><span>${item.body}</span><em class="status-pill ${level}">${pill}</em></div>`;
+  }).join("");
+}
+
 function setBar(id, value) {
   const el = document.getElementById(id);
   el.style.setProperty("--w", `${clamp(value, 0, 100)}%`);
@@ -233,6 +331,16 @@ function render() {
   document.getElementById("constraintList").innerHTML = constraints.map(item => {
     return `<div class="constraint-item"><strong>${item.title}</strong><span>${item.body}</span></div>`;
   }).join("");
+
+  const dataReadiness = buildDataReadiness(plan);
+  const readinessScore = Math.round(dataReadiness.reduce((sum, item) => sum + item.score, 0) / dataReadiness.length);
+  document.getElementById("dataScore").textContent = `${readinessScore}%`;
+  document.getElementById("frameworkScore").textContent = `覆盖度 ${Math.round((readinessScore + plan.confidence + 86) / 3)}%`;
+  renderItems("dataReadiness", dataReadiness, "readiness-item");
+  renderItems("governanceList", buildGovernance(plan), "governance-item");
+  renderItems("playbookList", buildPlaybook(plan), "playbook-item");
+  document.getElementById("governanceMode").textContent = plan.risk > 55 ? "增强复核" : "人机确认";
+  document.getElementById("playbookMode").textContent = plan.risk > 60 ? "风险优先" : "动态生成";
 }
 
 document.querySelectorAll("input[type='range']").forEach(input => {
@@ -254,4 +362,3 @@ Object.keys(presets).forEach(id => {
 });
 
 render();
-

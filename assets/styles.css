@@ -344,6 +344,43 @@ output {
   padding: 16px;
 }
 
+.framework-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px;
+}
+
+.framework-grid article,
+.readiness-item,
+.governance-item,
+.playbook-item {
+  padding: 14px;
+  background: #f7fafc;
+  border: 1px solid #dfe8ef;
+  border-radius: 8px;
+}
+
+.framework-grid b,
+.readiness-item b,
+.governance-item b,
+.playbook-item b {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--navy);
+  font-size: 15px;
+}
+
+.framework-grid span,
+.readiness-item span,
+.governance-item span,
+.playbook-item span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .constraint-item {
   min-height: 88px;
   padding: 14px;
@@ -361,6 +398,44 @@ output {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.5;
+}
+
+.readiness-list,
+.governance-list,
+.playbook-list {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.playbook-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  margin-top: 10px;
+  padding: 0 9px;
+  color: #174b33;
+  background: #e6f6ed;
+  border: 1px solid #bde5cd;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.status-pill.warn {
+  color: #765115;
+  background: #fff6df;
+  border-color: #f3d88b;
+}
+
+.status-pill.danger {
+  color: #7a2422;
+  background: #ffeceb;
+  border-color: #f1c1bf;
 }
 
 .plan-list,
@@ -414,6 +489,8 @@ output {
   .two-col,
   .recommendation-grid,
   .constraint-list,
+  .framework-grid,
+  .playbook-list,
   .right-rail {
     grid-template-columns: 1fr;
   }
@@ -444,4 +521,3 @@ output {
     grid-column: 1 / -1;
   }
 }
-

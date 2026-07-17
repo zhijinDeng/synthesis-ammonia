@@ -21,6 +21,25 @@ body {
   background: var(--bg);
   font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
   letter-spacing: 0;
+  overflow-x: hidden;
+}
+
+.panel,
+.panel *,
+.main-stage,
+.left-rail,
+.right-rail {
+  min-width: 0;
+}
+
+span,
+p,
+li,
+strong,
+b,
+small,
+em {
+  overflow-wrap: anywhere;
 }
 
 button,
@@ -329,24 +348,6 @@ output {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.5;
-}
-
-.review-meter {
-  display: block;
-  position: relative;
-  height: 10px;
-  margin-top: 10px;
-  background: #e8eef3;
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.review-meter::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  width: var(--w, 70%);
-  background: linear-gradient(90deg, var(--blue), var(--green));
 }
 
 .decision {

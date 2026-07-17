@@ -140,50 +140,58 @@ function buildPersona(plan, text) {
         : "当前班次最值得盯的是氢氮比、液氨库存和负荷偏差，是否有人工经验要覆盖模型？";
 
   return {
-    name: "合成氨 AI 调控师",
-    motto: `我先守安全边界，再找吨氨成本；我给 ${text.mode} 建议，但不替班长拍板。`,
+    name: "合成氨调控辅助",
+    motto: `工作原则：先校验安全边界，再评估吨氨成本；当前建议为“${text.mode}”，需按审批路径确认后执行。`,
     prompts: [
       {
-        title: "我会先追问",
+        title: "需现场确认",
         body: firstQuestion
       },
       {
-        title: "我会主动提醒",
+        title: "当班提示",
         body: `当前建议负荷 ${plan.load}%，风险指数 ${plan.risk}，审批路径为${confirmation}；任何建议都必须能解释触发了哪些合成氨约束。`
       },
       {
-        title: "我不会越界",
+        title: "边界声明",
         body: "不直接写 DCS/SIS，不自动开停车，不把市场自然波动算作 AI 收益，不隐藏未采纳原因。"
       }
     ]
   };
 }
 
-function buildReviewBoard(plan) {
-  const safety = clamp(92 - Math.max(0, plan.risk - 45) * 0.45, 70, 96);
-  const business = clamp(74 + state.demand * 0.08 + state.inventory * 0.05, 72, 96);
-  const execution = clamp(78 + plan.confidence * 0.08 - Math.max(0, plan.risk - 55) * 0.15, 70, 94);
-  const innovation = clamp(82 + state.market * 0.04 + state.green * 0.04, 78, 96);
+function buildExpertChecklist(plan) {
+  const highRisk = plan.risk > 60;
+  const lowConfidence = plan.confidence < 78;
   return [
     {
-      title: "业务贴合度",
-      body: "围绕合成氨-液氨库存-尿浆/复合肥/联碱消纳，不把题目泛化成普通 AI 看板。",
-      score: Math.round(business)
+      title: "工艺安全边界",
+      body: "合成塔床层温升、循环压缩机负荷、液氨罐区压力、安全库存和安环红线必须由现场口径确认。",
+      status: highRisk ? "需复核" : "已纳入",
+      level: highRisk ? "warn" : ""
     },
     {
-      title: "安全可信度",
-      body: "采用工艺硬约束、重大危险源监测、飞书审批、人机确认四重边界，AI 不碰控制层。",
-      score: Math.round(safety)
+      title: "数据与口径",
+      body: "MES 日计划、ERP 订单、DCS 摘要点、罐区库存、设备健康评分需要与企业现有台账对齐。",
+      status: lowConfidence ? "需补数" : "可试算",
+      level: lowConfidence ? "warn" : ""
     },
     {
-      title: "落地可执行",
-      body: "先影子运行，再班组确认，最后小闭环；接口从 MES、ERP、DCS 摘要点和罐区开始。",
-      score: Math.round(execution)
+      title: "审批责任",
+      body: "低风险建议由班长确认；高风险或设备边界接近时由班长和调度主管双确认，并保留飞书/MES 留痕。",
+      status: highRisk ? "双确认" : "班长确认",
+      level: highRisk ? "warn" : ""
     },
     {
-      title: "创新辨识度",
-      body: "把数字员工做成人、机理、经营、知识库、协同审批的闭环，而不是只给一个算法结果。",
-      score: Math.round(innovation)
+      title: "收益核算",
+      body: "只核算被采纳且实际执行方案的能源、库存、订单和风险改善，剔除行情自然波动。",
+      status: "保守口径",
+      level: ""
+    },
+    {
+      title: "试点条件",
+      body: "建议先进行 4-6 周影子运行；若关键数据延迟超过 15 分钟或模型连续偏差超阈值，暂停优化建议。",
+      status: "影子运行",
+      level: ""
     }
   ];
 }
@@ -626,11 +634,12 @@ function renderPersona(persona) {
   `;
 }
 
-function renderReviewBoard(items) {
-  const avg = Math.round(items.reduce((sum, item) => sum + item.score, 0) / items.length);
-  document.getElementById("reviewScore").textContent = `综合 ${avg}%`;
-  document.getElementById("reviewBoard").innerHTML = items.map(item => {
-    return `<div class="review-item"><b>${item.title}｜${item.score}%</b><span>${item.body}</span><i class="review-meter" style="--w:${item.score}%"></i></div>`;
+function renderExpertChecklist(items) {
+  const needsReview = items.some(item => item.level === "warn");
+  document.getElementById("reviewStatus").textContent = needsReview ? "需现场复核" : "可进入试算";
+  document.getElementById("reviewChecklist").innerHTML = items.map(item => {
+    const level = item.level || "";
+    return `<div class="review-item"><b>${item.title}</b><span>${item.body}</span><em class="status-pill ${level}">${item.status}</em></div>`;
   }).join("");
 }
 
@@ -741,12 +750,12 @@ function render() {
   const costRadar = buildCostRadar(plan);
   const avgCostGap = Math.round(costRadar.reduce((sum, item) => sum + item.value, 0) / costRadar.length);
   document.getElementById("dataScore").textContent = `${readinessScore}%`;
-  document.getElementById("frameworkScore").textContent = `覆盖度 ${Math.round((readinessScore + plan.confidence + 86) / 3)}%`;
+  document.getElementById("frameworkScore").textContent = readinessScore < 75 ? "待接口确认" : "MVP 闭环";
   document.getElementById("costGap").textContent = `可挖潜 ${(avgCostGap / 10).toFixed(1)}%`;
   renderCostRadar(costRadar);
   renderScenarioCompare(buildScenarioCompare(plan));
   renderPersona(buildPersona(plan, text));
-  renderReviewBoard(buildReviewBoard(plan));
+  renderExpertChecklist(buildExpertChecklist(plan));
   renderItems("dataReadiness", dataReadiness, "readiness-item");
   renderItems("governanceList", buildGovernance(plan), "governance-item");
   renderItems("playbookList", buildPlaybook(plan), "playbook-item");

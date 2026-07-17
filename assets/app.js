@@ -63,32 +63,32 @@ function calcPlan() {
 function strategy(plan) {
   if (state.health < 62) {
     return {
-      mode: "设备保守",
-      title: "降低负荷，优先保护压缩机和合成塔温升窗口",
-      text: `关键设备健康只有 ${state.health}，建议合成回路控制在 ${plan.load}% 左右，把高优订单让给库存和下游缓冲，安排短窗口点检，避免为追产放大非计划停车风险。`
+      mode: "护塔护机",
+      title: "降低合成回路负荷，优先保护循环压缩机与合成塔床层温升",
+      text: `压缩机/合成塔健康评分只有 ${state.health}，建议合成回路控制在 ${plan.load}% 左右，限制升负荷速率，优先核查循环气压缩机振动、合成塔床层温差和氨冷器换热效率，避免为追产放大非计划停车风险。`
     };
   }
 
   if (state.demand > 84 && state.inventory < 55) {
     return {
-      mode: "订单冲刺",
-      title: "高负荷补库存，优先兑现尿浆与复合肥订单",
-      text: `订单压力高且液氨库存偏紧，建议 ${plan.load}% 负荷运行，夜间补库存，白班向尿浆和复合肥线倾斜，外售液氨只保留合同刚性部分。`
+      mode: "保供补氨",
+      title: "提高氨合成负荷补液氨库存，优先兑现尿浆与复合肥消纳",
+      text: `下游消纳压力高且液氨库存偏紧，建议 ${plan.load}% 负荷运行；夜间利用低价能源窗口补液氨库存，白班优先保障尿浆和复合肥用氨，液氨外售只保留合同刚性部分。`
     };
   }
 
   if (state.energy > 78) {
     return {
-      mode: "能耗约束",
-      title: "错峰生产，压缩高价能源窗口的边际产量",
-      text: `能源价格压力达到 ${state.energy}，建议把可延后订单移到低价时段，合成回路维持 ${plan.load}%，用库存满足下游短时需求。`
+      mode: "吨氨能耗约束",
+      title: "错峰调氨，压缩高价原料/蒸汽/电力窗口的边际产量",
+      text: `原料/蒸汽电价压力达到 ${state.energy}，建议把可延后用氨需求移到低价时段，合成回路维持 ${plan.load}%，用安全库存覆盖下游短时消纳。`
     };
   }
 
   return {
-    mode: "经济最优",
-    title: "保持高负荷，优先保障尿浆与复合肥订单",
-    text: `当前订单压力和设备状态匹配，建议合成回路维持 ${plan.load}% 负荷，夜间避开高价电窗口补库存，白班向尿浆和复合肥线倾斜。`
+    mode: "稳氨优化",
+    title: "稳定合成回路负荷，优先平衡吨氨能耗、液氨库存和下游消纳",
+    text: `当前下游需求和设备状态匹配，建议合成回路维持 ${plan.load}% 负荷，重点跟踪氢氮比、循环气量、合成塔床层温升和液氨库存，避免频繁调负荷带来额外能耗。`
   };
 }
 
@@ -96,7 +96,7 @@ function buildDecisions(plan) {
   const items = [
     {
       title: `合成回路 ${plan.load}%`,
-      body: state.health < 62 ? "触发设备保守负荷上限，保护催化剂床层与循环压缩机。" : "兼顾订单交付、能耗与库存安全的推荐负荷。",
+      body: state.health < 62 ? "触发合成塔/循环压缩机保护上限，优先守床层温升、振动和循环气量。" : "兼顾吨氨能耗、液氨库存和下游用氨的推荐合成负荷。",
       level: state.health < 62 ? "danger" : ""
     },
     {
@@ -105,13 +105,13 @@ function buildDecisions(plan) {
       level: ""
     },
     {
-      title: `订单满足率 ${plan.order}%`,
-      body: state.demand > 84 ? "尿浆和复合肥订单优先，液氨外售降为弹性池。" : "下游需求可在当前库存水位下平衡。",
+      title: `下游消纳满足率 ${plan.order}%`,
+      body: state.demand > 84 ? "尿浆和复合肥用氨优先，液氨外售降为弹性池。" : "下游用氨可在当前液氨库存水位下平衡。",
       level: state.demand > 84 ? "warn" : ""
     },
     {
       title: `风险指数 ${plan.risk}`,
-      body: plan.risk > 60 ? "需要班长确认设备点检、罐区压力和能耗边界。" : "主要约束处于可控区间。",
+      body: plan.risk > 60 ? "需要班长确认循环压缩机点检、合成塔温升、罐区压力和吨氨能耗边界。" : "主要工艺约束处于可控区间。",
       level: plan.risk > 60 ? "danger" : ""
     }
   ];
@@ -158,26 +158,26 @@ function buildSchedule(plan) {
 function buildConstraints(plan) {
   const constraints = [
     {
-      title: "安全边界",
-      body: state.health < 62 ? "设备健康偏低，限制合成回路上限并插入点检窗口。" : "合成塔温升、压缩机负荷和罐区压力未触发硬约束。"
+      title: "合成安全边界",
+      body: state.health < 62 ? "压缩机/合成塔健康偏低，限制合成回路上限并插入点检窗口。" : "合成塔床层温升、循环压缩机负荷和液氨罐区压力未触发硬约束。"
     },
     {
-      title: "库存边界",
-      body: state.inventory < 45 ? "液氨库存低于舒适区，减少外售并优先补罐。" : "库存可支撑下游订单和短时错峰。"
+      title: "液氨库存边界",
+      body: state.inventory < 45 ? "液氨库存低于舒适区，减少外售并优先补罐。" : "液氨库存可支撑尿浆/复合肥消纳和短时错峰。"
     },
     {
-      title: "能源边界",
-      body: state.energy > 75 ? "高价能源窗口压产，低价时段补回产量。" : "能源成本允许维持经济负荷。"
+      title: "吨氨能耗边界",
+      body: state.energy > 75 ? "原料/蒸汽/电力高价窗口压产，低价时段补回产量。" : "原料和公用工程成本允许维持经济负荷。"
     },
     {
-      title: "经营边界",
-      body: state.market > 72 ? "市场波动高，保留液氨外售弹性，避免过早锁死产能。" : "订单结构稳定，优先保障高毛利下游。"
+      title: "下游消纳边界",
+      body: state.market > 72 ? "下游消纳波动高，保留液氨外售弹性，避免过早锁死产能。" : "尿浆/复合肥用氨结构稳定，优先保障高毛利下游。"
     }
   ];
 
   return constraints.concat({
-    title: "收益口径",
-    body: `预计毛利提升 ${plan.margin}%，能耗优化 ${plan.energyGain}%，碳强度下降 ${plan.carbonGain}%。`
+    title: "吨氨收益口径",
+    body: `预计吨氨综合收益提升 ${plan.margin}%，吨氨能耗优化 ${plan.energyGain}%，碳强度下降 ${plan.carbonGain}%。`
   });
 }
 
@@ -187,18 +187,18 @@ function buildDataReadiness(plan) {
   const ruleScore = clamp(80 + state.health * 0.05 - Math.max(0, plan.risk - 55) * 0.2, 58, 98);
   return [
     {
-      title: "实时信号完整性",
-      body: "重点看合成塔温升、循环压缩机、电耗、蒸汽、罐区压力和关键阀位是否连续可用。",
+      title: "合成关键点位完整性",
+      body: "重点看氢氮比、合成塔床层温升、循环压缩机负荷、电耗、蒸汽、液氨罐区压力是否连续可用。",
       score: Math.round(signalScore)
     },
     {
-      title: "业务口径同步",
-      body: "订单优先级、产品编码、库存水位、外售合同和下游产线计划需要统一到班次口径。",
+      title: "用氨口径同步",
+      body: "尿浆、复合肥、联碱配套、液氨外售的需求优先级、库存水位和班次计划需要统一口径。",
       score: Math.round(syncScore)
     },
     {
-      title: "专家规则沉淀",
-      body: "把班长经验、安环红线、检修窗口、异常处置步骤做成可审计规则库。",
+      title: "合成氨专家规则",
+      body: "把合成塔升降负荷、氢氮比偏差、压缩机点检、罐区安全库存和异常处置做成规则库。",
       score: Math.round(ruleScore)
     }
   ];
@@ -232,8 +232,8 @@ function buildGovernance(plan) {
 function buildPlaybook(plan) {
   const items = [
     {
-      title: "压缩机健康下降",
-      body: "自动降低负荷上限，冻结液氨外售弹性订单，插入点检窗口，并提示备机/检修资源。",
+      title: "循环压缩机健康下降",
+      body: "自动降低合成负荷上限，冻结液氨外售弹性订单，插入点检窗口，并提示备机/检修资源。",
       level: state.health < 62 ? "danger" : ""
     },
     {
@@ -242,18 +242,18 @@ function buildPlaybook(plan) {
       level: state.inventory < 50 ? "warn" : ""
     },
     {
-      title: "能源价格冲高",
-      body: "压缩高价窗口产量，将可延后订单转移到低价时段，用库存覆盖短时需求。",
+      title: "原料/蒸汽电价冲高",
+      body: "压缩高价窗口合成负荷，将可延后用氨需求转移到低价时段，用库存覆盖短时消纳。",
       level: state.energy > 75 ? "warn" : ""
     },
     {
-      title: "订单突然插单",
-      body: "重算订单优先级、交期罚金和下游毛利，输出原计划、插单计划和折中计划三案。",
+      title: "下游用氨突然插单",
+      body: "重算尿浆/复合肥用氨优先级、交期罚金和下游毛利，输出原计划、保供计划和折中计划三案。",
       level: state.demand > 86 ? "warn" : ""
     },
     {
       title: "环保指标逼近",
-      body: "联动蒸汽、电耗、CO2 和绿电可用性，限制边际高排放产量并生成安环说明。",
+      body: "联动蒸汽、电耗、CO2 和低碳能源可用性，限制边际高排放吨氨产量并生成安环说明。",
       level: state.green < 25 && plan.load > 85 ? "warn" : ""
     },
     {
@@ -272,11 +272,11 @@ function buildCostRadar(plan) {
   const orderLoss = clamp(state.demand * 0.45 + state.market * 0.25 - plan.order * 0.18, 8, 88);
   const operationLoss = clamp(Math.abs(plan.load - 84) * 1.4 + plan.risk * 0.18, 4, 70);
   return [
-    { label: "能源窗口", value: Math.round(energyLoss), note: "电/蒸汽/燃料价格与绿电可用性共同影响边际吨氨成本。" },
-    { label: "库存占用", value: Math.round(inventoryLoss), note: "液氨库存偏低会牺牲外售弹性，偏高会占用资金和罐区能力。" },
-    { label: "设备效率", value: Math.round(equipmentLoss), note: "压缩机、换热器、合成塔状态决定追产是否值得。" },
-    { label: "订单切换", value: Math.round(orderLoss), note: "尿浆、复合肥、液氨外售之间存在交期和毛利取舍。" },
-    { label: "操作偏差", value: Math.round(operationLoss), note: "实际负荷偏离推荐负荷会形成能耗和执行偏差。" }
+    { label: "原料/蒸汽", value: Math.round(energyLoss), note: "天然气/煤气化、蒸汽、电力价格共同影响边际吨氨成本。" },
+    { label: "液氨库存", value: Math.round(inventoryLoss), note: "库存偏低会牺牲下游保供和外售弹性，偏高会占用罐区与资金。" },
+    { label: "压缩机效率", value: Math.round(equipmentLoss), note: "循环压缩机负荷、振动、换热效率决定追产是否值得。" },
+    { label: "合成塔窗口", value: Math.round(orderLoss), note: "氢氮比、惰性气、床层温升和循环气量共同约束氨合成效率。" },
+    { label: "负荷偏差", value: Math.round(operationLoss), note: "实际负荷偏离推荐负荷会抬高电耗、蒸汽耗和执行偏差。" }
   ];
 }
 
@@ -286,28 +286,28 @@ function buildScenarioCompare(plan) {
   const safeLoad = clamp(state.health < 62 ? plan.load : plan.load - 10, 52, 82);
   const scenarios = [
     {
-      id: "稳态",
+      id: "稳氨",
       load: Math.round(stableLoad),
       margin: clamp(Number(plan.margin) - 0.4, -2, 12).toFixed(1),
       risk: clamp(plan.risk - 6, 5, 90),
-      action: "保持连续稳定，减少切换，适合数据不完整或市场波动一般的班次。"
+      action: "保持合成回路平稳，减少频繁升降负荷，重点守住氢氮比、床层温升和循环气压缩机效率。"
     },
     {
-      id: "冲刺",
+      id: "保供",
       load: Math.round(sprintLoad),
       margin: clamp(Number(plan.margin) + 0.8, -2, 13).toFixed(1),
       risk: clamp(plan.risk + 8, 8, 95),
-      action: "订单和库存压力高时优先，尿浆/复合肥倾斜，外售液氨保留刚性合同。"
+      action: "下游尿浆/复合肥用氨和液氨库存压力高时优先，外售液氨降为弹性池。"
     },
     {
-      id: "保守",
+      id: "护机",
       load: Math.round(safeLoad),
       margin: clamp(Number(plan.margin) - 1.1, -3, 10).toFixed(1),
       risk: clamp(plan.risk - 14, 3, 80),
-      action: "设备健康或数据置信偏低时优先，插入点检窗口，避免为追产放大停车风险。"
+      action: "循环压缩机、合成塔或换热系统健康偏低时优先，插入点检窗口，避免追产诱发停车。"
     }
   ];
-  const best = state.health < 62 || plan.risk > 65 ? "保守" : state.demand > 84 && state.inventory < 58 ? "冲刺" : "稳态";
+  const best = state.health < 62 || plan.risk > 65 ? "护机" : state.demand > 84 && state.inventory < 58 ? "保供" : "稳氨";
   return { best, scenarios };
 }
 
@@ -317,23 +317,23 @@ function buildExecutionMonitor(plan) {
   const supervision = plan.risk > 60 ? "需主管复核" : "班长确认";
   return [
     {
-      title: "计划下达",
-      body: `推荐负荷 ${plan.load}%；审批链：${supervision}；仅回写 MES 计划和交接摘要。`,
+      title: "合成负荷下达",
+      body: `推荐氨合成负荷 ${plan.load}%；审批链：${supervision}；仅回写 MES 计划和交接摘要，不写 DCS 控制参数。`,
       level: plan.risk > 60 ? "warn" : ""
     },
     {
-      title: "执行偏差",
-      body: `预计负荷偏差 ${loadDeviation} 个百分点；偏差超过 3 个百分点触发重算建议。`,
+      title: "负荷/氢氮比偏差",
+      body: `预计负荷偏差 ${loadDeviation} 个百分点；若氢氮比、循环气量或床层温升偏离阈值，触发重算建议。`,
       level: Number(loadDeviation) > 8 ? "warn" : ""
     },
     {
-      title: "库存跟踪",
+      title: "液氨库存跟踪",
       body: `液氨库存状态：${inventoryTrend}；库存低于安全阈值时自动压缩外售弹性。`,
       level: state.inventory < 50 ? "warn" : ""
     },
     {
-      title: "效果复盘",
-      body: `班后记录订单满足率 ${plan.order}%、能耗优化 ${plan.energyGain}%、库存安全 ${plan.stock}%。`,
+      title: "吨氨成本复盘",
+      body: `班后记录下游满足率 ${plan.order}%、吨氨能耗优化 ${plan.energyGain}%、液氨库存安全 ${plan.stock}%。`,
       level: ""
     }
   ];
@@ -341,10 +341,10 @@ function buildExecutionMonitor(plan) {
 
 function buildKnowledgeLoop(plan) {
   const learnedRule = state.health < 62
-    ? "当压缩机健康低于 62 且订单压力不高时，保守方案在收益略降下显著降低停车风险。"
+    ? "当循环压缩机/合成塔健康低于 62 且下游压力不高时，护机方案在收益略降下显著降低停车风险。"
     : state.demand > 84
-      ? "当订单压力高且库存低于 58 时，冲刺方案应优先保障尿浆/复合肥，外售液氨转为弹性池。"
-      : "当能源价格中等且设备健康高于 75 时，稳态方案通常在能耗和交付之间更均衡。";
+      ? "当尿浆/复合肥用氨压力高且液氨库存低于 58 时，保供方案应优先保障下游消纳，外售液氨转为弹性池。"
+      : "当原料/蒸汽电价中等且设备健康高于 75 时，稳氨方案通常在吨氨能耗和下游交付之间更均衡。";
   return [
     {
       title: "本班规则沉淀",
@@ -363,7 +363,7 @@ function buildKnowledgeLoop(plan) {
     },
     {
       title: "知识库对象",
-      body: "沉淀调度指令、异常处置、设备边界、订单切换、能耗窗口和交接班话术。",
+      body: "沉淀氨合成负荷指令、氢氮比/床层温升异常、循环压缩机边界、液氨库存策略和交接班话术。",
       level: ""
     }
   ];

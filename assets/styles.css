@@ -273,6 +273,82 @@ output {
   gap: 10px;
 }
 
+.persona-card,
+.review-board {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.persona-lead {
+  padding: 14px;
+  background: #f6fbff;
+  border: 1px solid #cfe1ef;
+  border-radius: 8px;
+}
+
+.persona-lead b {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--navy);
+  font-size: 17px;
+}
+
+.persona-lead span {
+  display: block;
+  color: #40586b;
+  font-size: 13px;
+  line-height: 1.58;
+}
+
+.persona-prompts,
+.review-item {
+  display: grid;
+  gap: 8px;
+}
+
+.persona-prompts div,
+.review-item {
+  padding: 12px;
+  background: #f7fafc;
+  border: 1px solid #dfe8ef;
+  border-radius: 8px;
+}
+
+.persona-prompts b,
+.review-item b {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--navy);
+  font-size: 14px;
+}
+
+.persona-prompts span,
+.review-item span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.review-meter {
+  display: block;
+  position: relative;
+  height: 10px;
+  margin-top: 10px;
+  background: #e8eef3;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.review-meter::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: var(--w, 70%);
+  background: linear-gradient(90deg, var(--blue), var(--green));
+}
+
 .decision {
   padding: 12px;
   background: #f5f8fb;

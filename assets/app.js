@@ -129,6 +129,65 @@ function buildDecisions(plan) {
   return items;
 }
 
+function buildPersona(plan, text) {
+  const confirmation = plan.risk > 60 ? "班长与调度主管双确认" : "班长确认";
+  const firstQuestion = state.health < 62
+    ? "循环压缩机振动、合成塔床层温差、氨冷器换热效率有没有最新点检结论？"
+    : state.demand > 84
+      ? "尿浆、复合肥、联碱和液氨外售中，哪些订单是刚性交付，哪些可以顺延？"
+      : state.energy > 75
+        ? "高价原料/蒸汽/电力窗口持续多久，低价窗口能否覆盖补库存需求？"
+        : "当前班次最值得盯的是氢氮比、液氨库存和负荷偏差，是否有人工经验要覆盖模型？";
+
+  return {
+    name: "合成氨 AI 调控师",
+    motto: `我先守安全边界，再找吨氨成本；我给 ${text.mode} 建议，但不替班长拍板。`,
+    prompts: [
+      {
+        title: "我会先追问",
+        body: firstQuestion
+      },
+      {
+        title: "我会主动提醒",
+        body: `当前建议负荷 ${plan.load}%，风险指数 ${plan.risk}，审批路径为${confirmation}；任何建议都必须能解释触发了哪些合成氨约束。`
+      },
+      {
+        title: "我不会越界",
+        body: "不直接写 DCS/SIS，不自动开停车，不把市场自然波动算作 AI 收益，不隐藏未采纳原因。"
+      }
+    ]
+  };
+}
+
+function buildReviewBoard(plan) {
+  const safety = clamp(92 - Math.max(0, plan.risk - 45) * 0.45, 70, 96);
+  const business = clamp(74 + state.demand * 0.08 + state.inventory * 0.05, 72, 96);
+  const execution = clamp(78 + plan.confidence * 0.08 - Math.max(0, plan.risk - 55) * 0.15, 70, 94);
+  const innovation = clamp(82 + state.market * 0.04 + state.green * 0.04, 78, 96);
+  return [
+    {
+      title: "业务贴合度",
+      body: "围绕合成氨-液氨库存-尿浆/复合肥/联碱消纳，不把题目泛化成普通 AI 看板。",
+      score: Math.round(business)
+    },
+    {
+      title: "安全可信度",
+      body: "采用工艺硬约束、重大危险源监测、飞书审批、人机确认四重边界，AI 不碰控制层。",
+      score: Math.round(safety)
+    },
+    {
+      title: "落地可执行",
+      body: "先影子运行，再班组确认，最后小闭环；接口从 MES、ERP、DCS 摘要点和罐区开始。",
+      score: Math.round(execution)
+    },
+    {
+      title: "创新辨识度",
+      body: "把数字员工做成人、机理、经营、知识库、协同审批的闭环，而不是只给一个算法结果。",
+      score: Math.round(innovation)
+    }
+  ];
+}
+
 function buildSchedule(plan) {
   const highDemand = state.demand > 82;
   const lowHealth = state.health < 62;
@@ -557,6 +616,24 @@ function renderScenarioCompare(compare) {
   }).join("");
 }
 
+function renderPersona(persona) {
+  document.getElementById("personaMode").textContent = persona.name;
+  document.getElementById("personaCard").innerHTML = `
+    <div class="persona-lead"><b>${persona.name}</b><span>${persona.motto}</span></div>
+    <div class="persona-prompts">
+      ${persona.prompts.map(item => `<div><b>${item.title}</b><span>${item.body}</span></div>`).join("")}
+    </div>
+  `;
+}
+
+function renderReviewBoard(items) {
+  const avg = Math.round(items.reduce((sum, item) => sum + item.score, 0) / items.length);
+  document.getElementById("reviewScore").textContent = `综合 ${avg}%`;
+  document.getElementById("reviewBoard").innerHTML = items.map(item => {
+    return `<div class="review-item"><b>${item.title}｜${item.score}%</b><span>${item.body}</span><i class="review-meter" style="--w:${item.score}%"></i></div>`;
+  }).join("");
+}
+
 function renderSteps(containerId, items) {
   document.getElementById(containerId).innerHTML = items.map((item, index) => {
     return `<div class="enterprise-step"><i>${index + 1}</i><div><b>${item.title}</b><span>${item.body}</span><small>${item.note}</small></div></div>`;
@@ -668,6 +745,8 @@ function render() {
   document.getElementById("costGap").textContent = `可挖潜 ${(avgCostGap / 10).toFixed(1)}%`;
   renderCostRadar(costRadar);
   renderScenarioCompare(buildScenarioCompare(plan));
+  renderPersona(buildPersona(plan, text));
+  renderReviewBoard(buildReviewBoard(plan));
   renderItems("dataReadiness", dataReadiness, "readiness-item");
   renderItems("governanceList", buildGovernance(plan), "governance-item");
   renderItems("playbookList", buildPlaybook(plan), "playbook-item");

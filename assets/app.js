@@ -265,6 +265,110 @@ function buildPlaybook(plan) {
   return items;
 }
 
+function buildCostRadar(plan) {
+  const energyLoss = clamp(state.energy * 0.55 - state.green * 0.15, 8, 82);
+  const inventoryLoss = clamp(Math.max(0, 60 - state.inventory) * 1.2 + state.market * 0.1, 5, 78);
+  const equipmentLoss = clamp((100 - state.health) * 0.75 + plan.risk * 0.15, 6, 85);
+  const orderLoss = clamp(state.demand * 0.45 + state.market * 0.25 - plan.order * 0.18, 8, 88);
+  const operationLoss = clamp(Math.abs(plan.load - 84) * 1.4 + plan.risk * 0.18, 4, 70);
+  return [
+    { label: "能源窗口", value: Math.round(energyLoss), note: "电/蒸汽/燃料价格与绿电可用性共同影响边际吨氨成本。" },
+    { label: "库存占用", value: Math.round(inventoryLoss), note: "液氨库存偏低会牺牲外售弹性，偏高会占用资金和罐区能力。" },
+    { label: "设备效率", value: Math.round(equipmentLoss), note: "压缩机、换热器、合成塔状态决定追产是否值得。" },
+    { label: "订单切换", value: Math.round(orderLoss), note: "尿浆、复合肥、液氨外售之间存在交期和毛利取舍。" },
+    { label: "操作偏差", value: Math.round(operationLoss), note: "实际负荷偏离推荐负荷会形成能耗和执行偏差。" }
+  ];
+}
+
+function buildScenarioCompare(plan) {
+  const stableLoad = clamp(plan.load - 4, 60, 88);
+  const sprintLoad = clamp(plan.load + 4, 68, 94);
+  const safeLoad = clamp(state.health < 62 ? plan.load : plan.load - 10, 52, 82);
+  const scenarios = [
+    {
+      id: "稳态",
+      load: Math.round(stableLoad),
+      margin: clamp(Number(plan.margin) - 0.4, -2, 12).toFixed(1),
+      risk: clamp(plan.risk - 6, 5, 90),
+      action: "保持连续稳定，减少切换，适合数据不完整或市场波动一般的班次。"
+    },
+    {
+      id: "冲刺",
+      load: Math.round(sprintLoad),
+      margin: clamp(Number(plan.margin) + 0.8, -2, 13).toFixed(1),
+      risk: clamp(plan.risk + 8, 8, 95),
+      action: "订单和库存压力高时优先，尿浆/复合肥倾斜，外售液氨保留刚性合同。"
+    },
+    {
+      id: "保守",
+      load: Math.round(safeLoad),
+      margin: clamp(Number(plan.margin) - 1.1, -3, 10).toFixed(1),
+      risk: clamp(plan.risk - 14, 3, 80),
+      action: "设备健康或数据置信偏低时优先，插入点检窗口，避免为追产放大停车风险。"
+    }
+  ];
+  const best = state.health < 62 || plan.risk > 65 ? "保守" : state.demand > 84 && state.inventory < 58 ? "冲刺" : "稳态";
+  return { best, scenarios };
+}
+
+function buildExecutionMonitor(plan) {
+  const loadDeviation = clamp(Math.abs(plan.load - 84) + state.market * 0.03, 1, 18).toFixed(1);
+  const inventoryTrend = state.inventory < 50 ? "补库存中" : state.inventory > 76 ? "释放库存弹性" : "安全区间";
+  const supervision = plan.risk > 60 ? "需主管复核" : "班长确认";
+  return [
+    {
+      title: "计划下达",
+      body: `推荐负荷 ${plan.load}%；审批链：${supervision}；仅回写 MES 计划和交接摘要。`,
+      level: plan.risk > 60 ? "warn" : ""
+    },
+    {
+      title: "执行偏差",
+      body: `预计负荷偏差 ${loadDeviation} 个百分点；偏差超过 3 个百分点触发重算建议。`,
+      level: Number(loadDeviation) > 8 ? "warn" : ""
+    },
+    {
+      title: "库存跟踪",
+      body: `液氨库存状态：${inventoryTrend}；库存低于安全阈值时自动压缩外售弹性。`,
+      level: state.inventory < 50 ? "warn" : ""
+    },
+    {
+      title: "效果复盘",
+      body: `班后记录订单满足率 ${plan.order}%、能耗优化 ${plan.energyGain}%、库存安全 ${plan.stock}%。`,
+      level: ""
+    }
+  ];
+}
+
+function buildKnowledgeLoop(plan) {
+  const learnedRule = state.health < 62
+    ? "当压缩机健康低于 62 且订单压力不高时，保守方案在收益略降下显著降低停车风险。"
+    : state.demand > 84
+      ? "当订单压力高且库存低于 58 时，冲刺方案应优先保障尿浆/复合肥，外售液氨转为弹性池。"
+      : "当能源价格中等且设备健康高于 75 时，稳态方案通常在能耗和交付之间更均衡。";
+  return [
+    {
+      title: "本班规则沉淀",
+      body: learnedRule,
+      level: ""
+    },
+    {
+      title: "未采纳原因标签",
+      body: "候选标签：安全边界、设备风险、订单变化、数据不可信、经验判断、安环要求。",
+      level: ""
+    },
+    {
+      title: "自学习触发",
+      body: plan.risk > 60 ? "高风险场景进入重点复盘样本，要求补充实际执行结果和班长判断。" : "常规场景进入周度模型校准样本。",
+      level: plan.risk > 60 ? "warn" : ""
+    },
+    {
+      title: "知识库对象",
+      body: "沉淀调度指令、异常处置、设备边界、订单切换、能耗窗口和交接班话术。",
+      level: ""
+    }
+  ];
+}
+
 function buildPilotChecklist(plan) {
   const mustReview = plan.risk > 55 || state.health < 65;
   return [
@@ -366,6 +470,19 @@ function renderItems(containerId, items, className) {
   }).join("");
 }
 
+function renderCostRadar(items) {
+  document.getElementById("costRadar").innerHTML = items.map(item => {
+    return `<div class="cost-item"><span title="${item.note}">${item.label}</span><b style="--w:${item.value}%"></b><strong>${item.value}</strong></div>`;
+  }).join("");
+}
+
+function renderScenarioCompare(compare) {
+  document.getElementById("bestScenario").textContent = `推荐：${compare.best}`;
+  document.getElementById("scenarioCompare").innerHTML = compare.scenarios.map(item => {
+    return `<div class="scenario-card ${item.id === compare.best ? "best" : ""}"><b>${item.id}方案</b><span>${item.action}</span><div class="scenario-kpis"><em>负荷 ${item.load}%</em><em>收益 ${item.margin}%</em><em>风险 ${Math.round(item.risk)}</em></div></div>`;
+  }).join("");
+}
+
 function renderSteps(containerId, items) {
   document.getElementById(containerId).innerHTML = items.map((item, index) => {
     return `<div class="enterprise-step"><i>${index + 1}</i><div><b>${item.title}</b><span>${item.body}</span><small>${item.note}</small></div></div>`;
@@ -459,16 +576,25 @@ function render() {
 
   const dataReadiness = buildDataReadiness(plan);
   const readinessScore = Math.round(dataReadiness.reduce((sum, item) => sum + item.score, 0) / dataReadiness.length);
+  const costRadar = buildCostRadar(plan);
+  const avgCostGap = Math.round(costRadar.reduce((sum, item) => sum + item.value, 0) / costRadar.length);
   document.getElementById("dataScore").textContent = `${readinessScore}%`;
   document.getElementById("frameworkScore").textContent = `覆盖度 ${Math.round((readinessScore + plan.confidence + 86) / 3)}%`;
+  document.getElementById("costGap").textContent = `可挖潜 ${(avgCostGap / 10).toFixed(1)}%`;
+  renderCostRadar(costRadar);
+  renderScenarioCompare(buildScenarioCompare(plan));
   renderItems("dataReadiness", dataReadiness, "readiness-item");
   renderItems("governanceList", buildGovernance(plan), "governance-item");
   renderItems("playbookList", buildPlaybook(plan), "playbook-item");
+  renderItems("executionMonitor", buildExecutionMonitor(plan), "execution-item");
+  renderItems("knowledgeLoop", buildKnowledgeLoop(plan), "knowledge-item");
   renderItems("acceptanceList", buildAcceptance(plan), "playbook-item");
   renderSteps("pilotChecklist", buildPilotChecklist(plan));
   renderSteps("shiftWorkflow", buildShiftWorkflow(plan));
   document.getElementById("governanceMode").textContent = plan.risk > 55 ? "增强复核" : "人机确认";
   document.getElementById("playbookMode").textContent = plan.risk > 60 ? "风险优先" : "动态生成";
+  document.getElementById("executionMode").textContent = plan.risk > 60 ? "加强监督" : "自动跟踪";
+  document.getElementById("learningMode").textContent = plan.risk > 60 ? "重点复盘" : "持续沉淀";
   document.getElementById("pilotMode").textContent = plan.risk > 55 ? "先影子运行" : "可试点评估";
   document.getElementById("acceptanceMode").textContent = plan.confidence < 78 ? "谨慎试点" : "保守口径";
   renderOperatorLog();

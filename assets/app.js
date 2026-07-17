@@ -13,6 +13,8 @@ const presets = {
   safePlan: { demand: 68, energy: 55, health: 57, inventory: 62, green: 38, market: 52 }
 };
 
+const operatorEvents = [];
+
 const scheduleColors = {
   synth: "#2477b3",
   storage: "#2fbf71",
@@ -370,6 +372,35 @@ function renderSteps(containerId, items) {
   }).join("");
 }
 
+function buildOperatorSummary(plan, text) {
+  const approval = plan.risk > 55 ? "班长 + 调度主管双确认" : "班长确认";
+  const fallback = plan.confidence < 75 || plan.risk > 70 ? "建议保持人工流程，AI 只给备选方案。" : "可进入当班试点评估。";
+  return `调控口径：${text.mode}；建议负荷 ${plan.load}%；日产氨 ${plan.nh3.toLocaleString()} t；风险指数 ${plan.risk}。审批要求：${approval}。${fallback}`;
+}
+
+function pushOperatorEvent(action, plan, text) {
+  const now = new Date();
+  const stamp = now.toLocaleTimeString("zh-CN", { hour12: false });
+  const templates = {
+    recalc: `已按当前订单、库存、能价和设备健康重算：${text.mode}，建议负荷 ${plan.load}%，风险 ${plan.risk}。`,
+    handover: `交接摘要：优先保障高优订单；关注库存 ${plan.stock}%、风险 ${plan.risk}；未确认前不回写控制参数。`,
+    accept: `已记录“拟采纳”状态：需保留输入快照、审批人、实际执行偏差和班后复盘结论。`
+  };
+  operatorEvents.unshift({
+    title: `${stamp} ${action === "recalc" ? "重算计划" : action === "handover" ? "生成交接摘要" : "标记采纳"}`,
+    body: templates[action]
+  });
+  if (operatorEvents.length > 6) operatorEvents.pop();
+}
+
+function renderOperatorLog() {
+  const log = document.getElementById("operatorLog");
+  if (!log) return;
+  log.innerHTML = operatorEvents.map(item => {
+    return `<div><strong>${item.title}</strong>${item.body}</div>`;
+  }).join("");
+}
+
 function setBar(id, value) {
   const el = document.getElementById(id);
   el.style.setProperty("--w", `${clamp(value, 0, 100)}%`);
@@ -403,6 +434,7 @@ function render() {
   document.getElementById("strategyTitle").textContent = text.title;
   document.getElementById("strategyText").textContent = text.text;
   document.getElementById("confidence").textContent = `置信度 ${plan.confidence}%`;
+  document.getElementById("operatorSummary").textContent = buildOperatorSummary(plan, text);
 
   document.getElementById("decisionStack").innerHTML = buildDecisions(plan).map(item => {
     return `<div class="decision ${item.level}"><strong>${item.title}</strong><span>${item.body}</span></div>`;
@@ -439,6 +471,7 @@ function render() {
   document.getElementById("playbookMode").textContent = plan.risk > 60 ? "风险优先" : "动态生成";
   document.getElementById("pilotMode").textContent = plan.risk > 55 ? "先影子运行" : "可试点评估";
   document.getElementById("acceptanceMode").textContent = plan.confidence < 78 ? "谨慎试点" : "保守口径";
+  renderOperatorLog();
 }
 
 document.querySelectorAll("input[type='range']").forEach(input => {
@@ -459,4 +492,14 @@ Object.keys(presets).forEach(id => {
   });
 });
 
+document.querySelectorAll("[data-action]").forEach(button => {
+  button.addEventListener("click", event => {
+    const plan = calcPlan();
+    const text = strategy(plan);
+    pushOperatorEvent(event.target.dataset.action, plan, text);
+    render();
+  });
+});
+
+pushOperatorEvent("recalc", calcPlan(), strategy(calcPlan()));
 render();

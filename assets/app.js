@@ -263,6 +263,93 @@ function buildPlaybook(plan) {
   return items;
 }
 
+function buildPilotChecklist(plan) {
+  const mustReview = plan.risk > 55 || state.health < 65;
+  return [
+    {
+      title: "先做影子运行",
+      body: "连续 4-6 周只出建议不回写，和调度员实际排产对比，不影响现有生产组织。",
+      note: "验收：至少覆盖早班、晚班、订单冲刺、设备保守和库存偏低场景。"
+    },
+    {
+      title: "只接必要接口",
+      body: "首批接 MES 日计划、ERP 订单、液氨库存、关键 DCS 摘要点和设备健康评分。",
+      note: "暂不要求全量实时点位，避免项目被接口范围拖死。"
+    },
+    {
+      title: mustReview ? "高风险双人确认" : "班长确认即可",
+      body: mustReview ? "当前风险或设备状态需要调度主管复核，AI 建议不能直接形成执行计划。" : "当前可按班长确认流程留痕，执行后记录偏差。",
+      note: "确认记录包含输入快照、推荐负荷、采纳原因和未采纳原因。"
+    },
+    {
+      title: "周度复盘收益",
+      body: "只统计被采纳方案的实际效果，按能源、库存、订单和停机风险四类归因。",
+      note: "不把市场价格自然波动算成 AI 收益。"
+    }
+  ];
+}
+
+function buildShiftWorkflow(plan) {
+  return [
+    {
+      title: "班前 30 分钟",
+      body: "调度员刷新订单、库存、设备健康和能源窗口，AI 输出三套方案：稳态、冲刺、保守。",
+      note: `当前推荐负荷 ${plan.load}%，风险指数 ${plan.risk}。`
+    },
+    {
+      title: "班前会 10 分钟",
+      body: "班长只看差异：今天为什么调负荷、哪些订单优先、哪些红线不能碰。",
+      note: "页面要能导出交接班摘要，而不是让一线人员读长报告。"
+    },
+    {
+      title: "班中偏差处理",
+      body: "若库存、设备或能价偏离阈值，系统提示是否重算；未确认前仍按原计划执行。",
+      note: "重算动作留痕，避免责任边界不清。"
+    },
+    {
+      title: "班后 5 分钟",
+      body: "记录采纳与否、实际负荷、订单完成、能耗和异常原因，用于下一轮校准。",
+      note: "把复盘做轻，现场才愿意持续用。"
+    }
+  ];
+}
+
+function buildAcceptance(plan) {
+  const safeToPilot = plan.confidence >= 78 && plan.risk < 60;
+  return [
+    {
+      title: "通过条件",
+      body: "影子运行期高优订单满足率不低于人工排产，单位氨能耗、库存占用或调度耗时至少一项稳定改善。",
+      level: safeToPilot ? "" : "warn"
+    },
+    {
+      title: "停用条件",
+      body: "关键数据延迟超过 15 分钟、DCS 摘要点缺失、模型连续两天偏差超阈值，自动停用优化建议。",
+      level: "warn"
+    },
+    {
+      title: "收益口径",
+      body: "只认采纳方案的实际差额收益；剔除价格自然上涨、订单结构变化和检修计划外部影响。",
+      level: ""
+    },
+    {
+      title: "上线边界",
+      body: "MVP 不改 DCS/SIS 控制逻辑，不做自动开停车，不绕过现有审批链。",
+      level: plan.risk > 65 ? "danger" : ""
+    },
+    {
+      title: "推广条件",
+      body: "至少完成一个月稳定影子运行、三次异常场景复盘和一份调度员采纳原因清单。",
+      level: ""
+    },
+    {
+      title: "成本控制",
+      body: "优先复用现有数据库、报表和接口；新建系统只做薄应用层，避免重做 MES/ERP。",
+      level: ""
+    }
+  ];
+}
+
 function levelLabel(level) {
   if (level === "danger") return "强关注";
   if (level === "warn") return "需关注";
@@ -274,6 +361,12 @@ function renderItems(containerId, items, className) {
     const level = item.level || "";
     const pill = item.pill || (item.score ? `${item.score}%` : levelLabel(level));
     return `<div class="${className}"><b>${item.title}</b><span>${item.body}</span><em class="status-pill ${level}">${pill}</em></div>`;
+  }).join("");
+}
+
+function renderSteps(containerId, items) {
+  document.getElementById(containerId).innerHTML = items.map((item, index) => {
+    return `<div class="enterprise-step"><i>${index + 1}</i><div><b>${item.title}</b><span>${item.body}</span><small>${item.note}</small></div></div>`;
   }).join("");
 }
 
@@ -339,8 +432,13 @@ function render() {
   renderItems("dataReadiness", dataReadiness, "readiness-item");
   renderItems("governanceList", buildGovernance(plan), "governance-item");
   renderItems("playbookList", buildPlaybook(plan), "playbook-item");
+  renderItems("acceptanceList", buildAcceptance(plan), "playbook-item");
+  renderSteps("pilotChecklist", buildPilotChecklist(plan));
+  renderSteps("shiftWorkflow", buildShiftWorkflow(plan));
   document.getElementById("governanceMode").textContent = plan.risk > 55 ? "增强复核" : "人机确认";
   document.getElementById("playbookMode").textContent = plan.risk > 60 ? "风险优先" : "动态生成";
+  document.getElementById("pilotMode").textContent = plan.risk > 55 ? "先影子运行" : "可试点评估";
+  document.getElementById("acceptanceMode").textContent = plan.confidence < 78 ? "谨慎试点" : "保守口径";
 }
 
 document.querySelectorAll("input[type='range']").forEach(input => {

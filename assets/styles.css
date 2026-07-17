@@ -402,7 +402,8 @@ output {
 
 .readiness-list,
 .governance-list,
-.playbook-list {
+.playbook-list,
+.enterprise-list {
   display: grid;
   gap: 12px;
   padding: 16px;
@@ -436,6 +437,54 @@ output {
   color: #7a2422;
   background: #ffeceb;
   border-color: #f1c1bf;
+}
+
+.enterprise-list {
+  grid-template-columns: 1fr;
+}
+
+.enterprise-step {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px;
+  background: #f7fafc;
+  border: 1px solid #dfe8ef;
+  border-radius: 8px;
+}
+
+.enterprise-step i {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  color: #fff;
+  background: var(--blue);
+  border-radius: 999px;
+  font-style: normal;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.enterprise-step b {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--navy);
+  font-size: 15px;
+}
+
+.enterprise-step span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.enterprise-step small {
+  display: block;
+  margin-top: 8px;
+  color: #456176;
+  font-size: 12px;
 }
 
 .plan-list,

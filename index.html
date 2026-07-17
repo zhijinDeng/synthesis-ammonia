@@ -220,6 +220,32 @@
           </div>
           <div id="playbookList" class="playbook-list"></div>
         </div>
+
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-title">
+              <span>企业试点清单</span>
+              <strong id="pilotMode">先影子运行</strong>
+            </div>
+            <div id="pilotChecklist" class="enterprise-list"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-title">
+              <span>班组使用流程</span>
+              <strong>不改控制逻辑</strong>
+            </div>
+            <div id="shiftWorkflow" class="enterprise-list"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">
+            <span>验收与停用条件</span>
+            <strong id="acceptanceMode">保守口径</strong>
+          </div>
+          <div id="acceptanceList" class="playbook-list"></div>
+        </div>
       </section>
 
       <aside class="right-rail" aria-label="方案设计">
@@ -265,6 +291,19 @@
             <li>上线治理：模型灰度、置信阈值、漂移告警、审批留痕和回滚机制。</li>
             <li>安全治理：AI 只给建议，硬约束由 SIS/DCS/MES 规则和人工确认守住。</li>
             <li>组织治理：调度、设备、能源、经营、安环共享同一套收益和风险解释。</li>
+          </ul>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">
+            <span>落地边界</span>
+            <strong>务实版</strong>
+          </div>
+          <ul class="source-list">
+            <li>第一阶段不碰 DCS 自动控制，只做排产建议、风险解释和班前会辅助。</li>
+            <li>先接 MES 计划、ERP 订单、罐区库存和关键 DCS 摘要点，避免一上来做全厂大集成。</li>
+            <li>收益按保守口径核算，只认实际采纳方案带来的能耗、库存、订单和停机风险改善。</li>
+            <li>模型低置信、数据延迟、安环红线接近时自动降级，现场经验优先。</li>
           </ul>
         </div>
 

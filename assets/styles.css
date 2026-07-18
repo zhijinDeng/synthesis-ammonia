@@ -350,6 +350,65 @@ output {
   line-height: 1.5;
 }
 
+.innovation-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px;
+}
+
+.innovation-card {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-height: 178px;
+  padding: 14px;
+  background: linear-gradient(180deg, #f8fbfd, #ffffff);
+  border: 1px solid #dbe6ee;
+  border-top: 4px solid var(--blue);
+  border-radius: 8px;
+}
+
+.innovation-card div {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.innovation-card b {
+  color: var(--navy);
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.innovation-card em {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  color: #174b33;
+  background: #e6f6ed;
+  border: 1px solid #bde5cd;
+  border-radius: 999px;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.innovation-card span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.innovation-card small {
+  align-self: end;
+  padding-top: 8px;
+  color: #34546b;
+  border-top: 1px solid #e5edf3;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .decision {
   padding: 12px;
   background: #f5f8fb;
@@ -849,6 +908,7 @@ output {
   .framework-grid,
   .playbook-list,
   .feishu-grid,
+  .innovation-grid,
   .scenario-kpis,
   .right-rail {
     grid-template-columns: 1fr;

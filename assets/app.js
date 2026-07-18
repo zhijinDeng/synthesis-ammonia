@@ -196,6 +196,41 @@ function buildExpertChecklist(plan) {
   ];
 }
 
+function buildInnovationLoop(plan, text) {
+  const controlPath = plan.risk > 60 ? "工艺约束 + 双人审批 + 飞书留痕" : "工艺约束 + 班长确认 + 班后复盘";
+  const counterfactual = state.demand > 84
+    ? "保留原计划、保供方案和实际执行结果，比较高优订单满足率、液氨库存占用和吨氨能耗。"
+    : state.energy > 75
+      ? "保留错峰前后能耗窗口，比较高价时段压产与低价补库存的实际差额。"
+      : "保留稳氨建议与经验排产的同班对照，避免把市场波动计入平台收益。";
+  return [
+    {
+      title: "反事实收益归因",
+      tag: "经营核算",
+      body: counterfactual,
+      metric: `当前核算口径：收益 ${plan.margin > 0 ? "+" : ""}${plan.margin}% / 能耗 ${plan.energyGain}%`
+    },
+    {
+      title: "安全护栏链",
+      tag: "安环优先",
+      body: `建议“${text.mode}”进入${controlPath}，任何执行动作都不绕过 DCS/SIS 和现有审批链。`,
+      metric: `风险指数 ${plan.risk}，置信度 ${plan.confidence}%`
+    },
+    {
+      title: "未采纳学习",
+      tag: "专家传承",
+      body: "未采纳原因和采纳原因同等重要，统一归档为安全边界、设备风险、订单变化、数据不可信、经验判断等标签。",
+      metric: plan.risk > 60 ? "本班进入重点复盘样本" : "本班进入常规校准样本"
+    },
+    {
+      title: "协同触达",
+      tag: "组织闭环",
+      body: "飞书只承载通知、审批、复盘和责任留痕，调度员仍在 MES/DCS 既有流程中执行确认后的计划。",
+      metric: "卡片、审批、复盘三类草稿已联动"
+    }
+  ];
+}
+
 function buildSchedule(plan) {
   const highDemand = state.demand > 82;
   const lowHealth = state.health < 62;
@@ -643,6 +678,13 @@ function renderExpertChecklist(items) {
   }).join("");
 }
 
+function renderInnovationLoop(items) {
+  document.getElementById("innovationMode").textContent = items.some(item => item.tag === "安环优先") ? "可审计试点" : "闭环运行";
+  document.getElementById("innovationLoop").innerHTML = items.map(item => {
+    return `<article class="innovation-card"><div><b>${item.title}</b><em>${item.tag}</em></div><span>${item.body}</span><small>${item.metric}</small></article>`;
+  }).join("");
+}
+
 function renderSteps(containerId, items) {
   document.getElementById(containerId).innerHTML = items.map((item, index) => {
     return `<div class="enterprise-step"><i>${index + 1}</i><div><b>${item.title}</b><span>${item.body}</span><small>${item.note}</small></div></div>`;
@@ -756,6 +798,7 @@ function render() {
   renderScenarioCompare(buildScenarioCompare(plan));
   renderPersona(buildPersona(plan, text));
   renderExpertChecklist(buildExpertChecklist(plan));
+  renderInnovationLoop(buildInnovationLoop(plan, text));
   renderItems("dataReadiness", dataReadiness, "readiness-item");
   renderItems("governanceList", buildGovernance(plan), "governance-item");
   renderItems("playbookList", buildPlaybook(plan), "playbook-item");

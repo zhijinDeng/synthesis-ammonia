@@ -3,14 +3,14 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>合成氨 AI 调控师工作台</title>
+    <title>合成氨智能调控师工作台</title>
     <link rel="stylesheet" href="assets/styles.css" />
   </head>
   <body>
     <header class="topbar">
       <div>
         <p class="eyebrow">Yuntu Ammonia Dispatch Copilot</p>
-        <h1>合成氨 AI 调控师工作台</h1>
+        <h1>合成氨智能调控师工作台</h1>
       </div>
       <div class="top-actions" aria-label="场景操作">
         <button id="nightPlan" type="button">夜间稳态</button>
@@ -28,7 +28,7 @@
           </div>
           <div class="metric-grid">
             <article>
-              <span>建议负荷</span>
+              <span>目标负荷</span>
               <strong id="loadKpi">86%</strong>
             </article>
             <article>
@@ -122,7 +122,7 @@
             </article>
             <article>
               <b>重算</b>
-              <span>生成稳态、冲刺、保守三套排产建议，给出差异和约束触发。</span>
+              <span>生成稳态、冲刺、保守三套排产方案，给出差异和约束触发。</span>
             </article>
             <article>
               <b>确认</b>
@@ -141,14 +141,14 @@
 
         <div class="panel recommendation">
           <div class="panel-title">
-            <span>AI 调度建议</span>
+            <span>调度方案</span>
             <strong id="confidence">置信度 88%</strong>
           </div>
           <div class="recommendation-grid">
             <div>
               <h2 id="strategyTitle">保持高负荷，优先保障尿浆与复合肥订单</h2>
               <p id="strategyText">
-                当前订单压力高、设备状态良好，建议合成回路维持 86% 负荷，夜间避开高价电窗口补库存，白班向尿浆和复合肥线倾斜。
+                当前订单压力高、设备状态良好，合成回路目标维持 86% 负荷，夜间避开高价电窗口补库存，白班向尿浆和复合肥线倾斜。
               </p>
             </div>
             <div class="decision-stack" id="decisionStack"></div>
@@ -193,7 +193,7 @@
           <div class="panel">
             <div class="panel-title">
               <span>合成氨负荷三案比选</span>
-              <strong id="bestScenario">推荐：冲刺</strong>
+              <strong id="bestScenario">优选：冲刺</strong>
             </div>
             <div id="scenarioCompare" class="scenario-compare"></div>
           </div>
@@ -350,7 +350,7 @@
             <strong>当班</strong>
           </div>
           <ul class="source-list">
-            <li>班长：确认推荐负荷、红线约束、交接班摘要。</li>
+            <li>班长：确认目标负荷、红线约束、交接班摘要。</li>
             <li>调度：平衡订单、库存、下游产线和物流窗口。</li>
             <li>设备：关注压缩机、合成塔、换热器和罐区健康。</li>
             <li>安环：确认安全库存、罐区压力、能碳和环保指标。</li>

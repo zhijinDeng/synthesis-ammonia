@@ -18,7 +18,7 @@ const feishuEvents = [];
 
 const feishuConfig = {
   connected: false,
-  appName: "合成氨 AI 调控师",
+  appName: "合成氨智能调控师",
   targetChat: "合成氨当班调度群",
   approvalName: "合成氨负荷调整审批",
   approvalCode: "NH3_LOAD_ADJUSTMENT",
@@ -75,7 +75,7 @@ function strategy(plan) {
     return {
       mode: "护塔护机",
       title: "降低合成回路负荷，优先保护循环压缩机与合成塔床层温升",
-      text: `压缩机/合成塔健康评分只有 ${state.health}，建议合成回路控制在 ${plan.load}% 左右，限制升负荷速率，优先核查循环气压缩机振动、合成塔床层温差和氨冷器换热效率，避免为追产放大非计划停车风险。`
+      text: `压缩机/合成塔健康评分只有 ${state.health}，合成回路目标控制在 ${plan.load}% 左右，限制升负荷速率，优先核查循环气压缩机振动、合成塔床层温差和氨冷器换热效率，避免为追产放大非计划停车风险。`
     };
   }
 
@@ -83,7 +83,7 @@ function strategy(plan) {
     return {
       mode: "保供补氨",
       title: "提高氨合成负荷补液氨库存，优先兑现尿浆与复合肥消纳",
-      text: `下游消纳压力高且液氨库存偏紧，建议 ${plan.load}% 负荷运行；夜间利用低价能源窗口补液氨库存，白班优先保障尿浆和复合肥用氨，液氨外售只保留合同刚性部分。`
+      text: `下游消纳压力高且液氨库存偏紧，合成回路目标为 ${plan.load}% 负荷；夜间利用低价能源窗口补液氨库存，白班优先保障尿浆和复合肥用氨，液氨外售只保留合同刚性部分。`
     };
   }
 
@@ -91,14 +91,14 @@ function strategy(plan) {
     return {
       mode: "吨氨能耗约束",
       title: "错峰调氨，压缩高价原料/蒸汽/电力窗口的边际产量",
-      text: `原料/蒸汽电价压力达到 ${state.energy}，建议把可延后用氨需求移到低价时段，合成回路维持 ${plan.load}%，用安全库存覆盖下游短时消纳。`
+      text: `原料/蒸汽电价压力达到 ${state.energy}，可延后用氨需求转入低价时段，合成回路维持 ${plan.load}%，用安全库存覆盖下游短时消纳。`
     };
   }
 
   return {
     mode: "稳氨优化",
     title: "稳定合成回路负荷，优先平衡吨氨能耗、液氨库存和下游消纳",
-    text: `当前下游需求和设备状态匹配，建议合成回路维持 ${plan.load}% 负荷，重点跟踪氢氮比、循环气量、合成塔床层温升和液氨库存，避免频繁调负荷带来额外能耗。`
+    text: `当前下游需求和设备状态匹配，合成回路目标维持 ${plan.load}% 负荷，重点跟踪氢氮比、循环气量、合成塔床层温升和液氨库存，避免频繁调负荷带来额外能耗。`
   };
 }
 
@@ -106,7 +106,7 @@ function buildDecisions(plan) {
   const items = [
     {
       title: `合成回路 ${plan.load}%`,
-      body: state.health < 62 ? "触发合成塔/循环压缩机保护上限，优先守床层温升、振动和循环气量。" : "兼顾吨氨能耗、液氨库存和下游用氨的推荐合成负荷。",
+      body: state.health < 62 ? "触发合成塔/循环压缩机保护上限，优先守床层温升、振动和循环气量。" : "兼顾吨氨能耗、液氨库存和下游用氨的目标合成负荷。",
       level: state.health < 62 ? "danger" : ""
     },
     {
@@ -141,19 +141,19 @@ function buildPersona(plan, text) {
 
   return {
     name: "合成氨调控辅助",
-    motto: `工作原则：先校验安全边界，再评估吨氨成本；当前建议为“${text.mode}”，需按审批路径确认后执行。`,
+    motto: `工作原则：先校验安全边界，再评估吨氨成本；当前方案为“${text.mode}”，需按审批路径确认后执行。`,
     prompts: [
       {
         title: "需现场确认",
         body: firstQuestion
       },
       {
-        title: "当班提示",
-        body: `当前建议负荷 ${plan.load}%，风险指数 ${plan.risk}，审批路径为${confirmation}；任何建议都必须能解释触发了哪些合成氨约束。`
+        title: "当班提醒",
+        body: `当前目标负荷 ${plan.load}%，风险指数 ${plan.risk}，审批路径为${confirmation}；任何方案都必须能解释触发了哪些合成氨约束。`
       },
       {
         title: "边界声明",
-        body: "不直接写 DCS/SIS，不自动开停车，不把市场自然波动算作 AI 收益，不隐藏未采纳原因。"
+        body: "不直接写 DCS/SIS，不自动开停车，不把市场自然波动算作系统收益，不隐藏未采纳原因。"
       }
     ]
   };
@@ -177,7 +177,7 @@ function buildExpertChecklist(plan) {
     },
     {
       title: "审批责任",
-      body: "低风险建议由班长确认；高风险或设备边界接近时由班长和调度主管双确认，并保留飞书/MES 留痕。",
+      body: "低风险方案由班长确认；高风险或设备边界接近时由班长和调度主管双确认，并保留飞书/MES 留痕。",
       status: highRisk ? "双确认" : "班长确认",
       level: highRisk ? "warn" : ""
     },
@@ -189,7 +189,7 @@ function buildExpertChecklist(plan) {
     },
     {
       title: "试点条件",
-      body: "建议先进行 4-6 周影子运行；若关键数据延迟超过 15 分钟或模型连续偏差超阈值，暂停优化建议。",
+      body: "先进行 4-6 周影子运行；若关键数据延迟超过 15 分钟或模型连续偏差超阈值，暂停优化方案。",
       status: "影子运行",
       level: ""
     }
@@ -202,7 +202,7 @@ function buildInnovationLoop(plan, text) {
     ? "保留原计划、保供方案和实际执行结果，比较高优订单满足率、液氨库存占用和吨氨能耗。"
     : state.energy > 75
       ? "保留错峰前后能耗窗口，比较高价时段压产与低价补库存的实际差额。"
-      : "保留稳氨建议与经验排产的同班对照，避免把市场波动计入平台收益。";
+      : "保留稳氨方案与经验排产的同班对照，避免把市场波动计入平台收益。";
   return [
     {
       title: "反事实收益归因",
@@ -213,7 +213,7 @@ function buildInnovationLoop(plan, text) {
     {
       title: "安全护栏链",
       tag: "安环优先",
-      body: `建议“${text.mode}”进入${controlPath}，任何执行动作都不绕过 DCS/SIS 和现有审批链。`,
+      body: `方案“${text.mode}”进入${controlPath}，任何执行动作都不绕过 DCS/SIS 和现有审批链。`,
       metric: `风险指数 ${plan.risk}，置信度 ${plan.confidence}%`
     },
     {
@@ -324,7 +324,7 @@ function buildGovernance(plan) {
       title: "置信阈值",
       body: `当前置信度 ${plan.confidence}%。低于 75% 时只允许生成备选方案，不允许回写 MES。`,
       level: plan.confidence < 75 ? "warn" : "",
-      pill: plan.confidence < 75 ? "需复核" : "可建议"
+      pill: plan.confidence < 75 ? "需复核" : "可运行"
     },
     {
       title: "漂移监控",
@@ -345,7 +345,7 @@ function buildPlaybook(plan) {
   const items = [
     {
       title: "循环压缩机健康下降",
-      body: "自动降低合成负荷上限，冻结液氨外售弹性订单，插入点检窗口，并提示备机/检修资源。",
+      body: "自动降低合成负荷上限，冻结液氨外售弹性订单，插入点检窗口，并联动备机/检修资源。",
       level: state.health < 62 ? "danger" : ""
     },
     {
@@ -370,7 +370,7 @@ function buildPlaybook(plan) {
     },
     {
       title: "模型低置信",
-      body: "降级为规则推荐，要求人工复核，保留当前稳定方案并禁止自动回写。",
+      body: "降级为规则方案，要求人工复核，保留当前稳定方案并禁止自动回写。",
       level: plan.confidence < 75 ? "danger" : ""
     }
   ];
@@ -388,7 +388,7 @@ function buildCostRadar(plan) {
     { label: "液氨库存", value: Math.round(inventoryLoss), note: "库存偏低会牺牲下游保供和外售弹性，偏高会占用罐区与资金。" },
     { label: "压缩机效率", value: Math.round(equipmentLoss), note: "循环压缩机负荷、振动、换热效率决定追产是否值得。" },
     { label: "合成塔窗口", value: Math.round(orderLoss), note: "氢氮比、惰性气、床层温升和循环气量共同约束氨合成效率。" },
-    { label: "负荷偏差", value: Math.round(operationLoss), note: "实际负荷偏离推荐负荷会抬高电耗、蒸汽耗和执行偏差。" }
+    { label: "负荷偏差", value: Math.round(operationLoss), note: "实际负荷偏离目标负荷会抬高电耗、蒸汽耗和执行偏差。" }
   ];
 }
 
@@ -430,12 +430,12 @@ function buildExecutionMonitor(plan) {
   return [
     {
       title: "合成负荷下达",
-      body: `推荐氨合成负荷 ${plan.load}%；审批链：${supervision}；仅回写 MES 计划和交接摘要，不写 DCS 控制参数。`,
+      body: `目标氨合成负荷 ${plan.load}%；审批链：${supervision}；仅回写 MES 计划和交接摘要，不写 DCS 控制参数。`,
       level: plan.risk > 60 ? "warn" : ""
     },
     {
       title: "负荷/氢氮比偏差",
-      body: `预计负荷偏差 ${loadDeviation} 个百分点；若氢氮比、循环气量或床层温升偏离阈值，触发重算建议。`,
+      body: `预计负荷偏差 ${loadDeviation} 个百分点；若氢氮比、循环气量或床层温升偏离阈值，触发重算流程。`,
       level: Number(loadDeviation) > 8 ? "warn" : ""
     },
     {
@@ -483,9 +483,9 @@ function buildKnowledgeLoop(plan) {
 
 function buildFeishuCard(plan, text) {
   const approval = plan.risk > 55 ? "班长 + 调度主管双确认" : "班长确认";
-  const warning = plan.risk > 70 || plan.confidence < 75 ? "低置信/高风险，仅允许作为备选建议" : "可进入当班确认流程";
+  const warning = plan.risk > 70 || plan.confidence < 75 ? "低置信/高风险，仅允许作为备选方案" : "可进入当班确认流程";
   return {
-    title: `${text.mode}｜合成氨负荷建议 ${plan.load}%`,
+    title: `${text.mode}｜合成氨目标负荷 ${plan.load}%`,
     summary: text.title,
     fields: [
       { label: "目标群", value: feishuConfig.targetChat },
@@ -550,7 +550,7 @@ function buildPilotChecklist(plan) {
   return [
     {
       title: "先做影子运行",
-      body: "连续 4-6 周只出建议不回写，和调度员实际排产对比，不影响现有生产组织。",
+      body: "连续 4-6 周只输出方案不回写，和调度员实际排产对比，不影响现有生产组织。",
       note: "验收：至少覆盖早班、晚班、订单冲刺、设备保守和库存偏低场景。"
     },
     {
@@ -560,13 +560,13 @@ function buildPilotChecklist(plan) {
     },
     {
       title: mustReview ? "高风险双人确认" : "班长确认即可",
-      body: mustReview ? "当前风险或设备状态需要调度主管复核，AI 建议不能直接形成执行计划。" : "当前可按班长确认流程留痕，执行后记录偏差。",
-      note: "确认记录包含输入快照、推荐负荷、采纳原因和未采纳原因。"
+      body: mustReview ? "当前风险或设备状态需要调度主管复核，系统方案不能直接形成执行计划。" : "当前可按班长确认流程留痕，执行后记录偏差。",
+      note: "确认记录包含输入快照、目标负荷、采纳原因和未采纳原因。"
     },
     {
       title: "周度复盘收益",
       body: "只统计被采纳方案的实际效果，按能源、库存、订单和停机风险四类归因。",
-      note: "不把市场价格自然波动算成 AI 收益。"
+      note: "不把市场价格自然波动算成系统收益。"
     }
   ];
 }
@@ -575,8 +575,8 @@ function buildShiftWorkflow(plan) {
   return [
     {
       title: "班前 30 分钟",
-      body: "调度员刷新订单、库存、设备健康和能源窗口，AI 输出三套方案：稳态、冲刺、保守。",
-      note: `当前推荐负荷 ${plan.load}%，风险指数 ${plan.risk}。`
+      body: "调度员刷新订单、库存、设备健康和能源窗口，平台输出三套方案：稳态、冲刺、保守。",
+      note: `当前目标负荷 ${plan.load}%，风险指数 ${plan.risk}。`
     },
     {
       title: "班前会 10 分钟",
@@ -585,7 +585,7 @@ function buildShiftWorkflow(plan) {
     },
     {
       title: "班中偏差处理",
-      body: "若库存、设备或能价偏离阈值，系统提示是否重算；未确认前仍按原计划执行。",
+      body: "若库存、设备或能价偏离阈值，系统发起重算确认；未确认前仍按原计划执行。",
       note: "重算动作留痕，避免责任边界不清。"
     },
     {
@@ -606,7 +606,7 @@ function buildAcceptance(plan) {
     },
     {
       title: "停用条件",
-      body: "关键数据延迟超过 15 分钟、DCS 摘要点缺失、模型连续两天偏差超阈值，自动停用优化建议。",
+      body: "关键数据延迟超过 15 分钟、DCS 摘要点缺失、模型连续两天偏差超阈值，自动停用优化方案。",
       level: "warn"
     },
     {
@@ -653,7 +653,7 @@ function renderCostRadar(items) {
 }
 
 function renderScenarioCompare(compare) {
-  document.getElementById("bestScenario").textContent = `推荐：${compare.best}`;
+  document.getElementById("bestScenario").textContent = `优选：${compare.best}`;
   document.getElementById("scenarioCompare").innerHTML = compare.scenarios.map(item => {
     return `<div class="scenario-card ${item.id === compare.best ? "best" : ""}"><b>${item.id}方案</b><span>${item.action}</span><div class="scenario-kpis"><em>负荷 ${item.load}%</em><em>收益 ${item.margin}%</em><em>风险 ${Math.round(item.risk)}</em></div></div>`;
   }).join("");
@@ -693,8 +693,8 @@ function renderSteps(containerId, items) {
 
 function buildOperatorSummary(plan, text) {
   const approval = plan.risk > 55 ? "班长 + 调度主管双确认" : "班长确认";
-  const fallback = plan.confidence < 75 || plan.risk > 70 ? "建议保持人工流程，AI 只给备选方案。" : "可进入当班试点评估。";
-  return `调控口径：${text.mode}；建议负荷 ${plan.load}%；日产氨 ${plan.nh3.toLocaleString()} t；风险指数 ${plan.risk}。审批要求：${approval}。${fallback}`;
+  const fallback = plan.confidence < 75 || plan.risk > 70 ? "保持人工流程，系统只给备选方案。" : "可进入当班试点评估。";
+  return `调控口径：${text.mode}；目标负荷 ${plan.load}%；日产氨 ${plan.nh3.toLocaleString()} t；风险指数 ${plan.risk}。审批要求：${approval}。${fallback}`;
 }
 
 function pushOperatorEvent(action, plan, text) {
@@ -709,7 +709,7 @@ function pushOperatorEvent(action, plan, text) {
     feishuReview: "同步飞书复盘"
   };
   const templates = {
-    recalc: `已按当前订单、库存、能价和设备健康重算：${text.mode}，建议负荷 ${plan.load}%，风险 ${plan.risk}。`,
+    recalc: `已按当前订单、库存、能价和设备健康重算：${text.mode}，目标负荷 ${plan.load}%，风险 ${plan.risk}。`,
     handover: `交接摘要：优先保障高优订单；关注库存 ${plan.stock}%、风险 ${plan.risk}；未确认前不回写控制参数。`,
     accept: `已记录“拟采纳”状态：需保留输入快照、审批人、实际执行偏差和班后复盘结论。`,
     feishuCard: `已生成飞书群卡片草稿：可发送给${feishuConfig.targetChat}进行班组确认。`,

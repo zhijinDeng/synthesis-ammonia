@@ -169,6 +169,73 @@ function feishu(plan, text) {
   `;
 }
 
+function feishuContract(plan, text) {
+  const riskPath = plan.risk > 55 ? "班长确认 → 调度主管复核 → 安环知会" : "班长确认";
+  return {
+    card: {
+      target_chat: "合成氨当班调度群",
+      title: `${text.mode}｜合成氨负荷调整建议`,
+      buttons: ["采纳并发起审批", "要求复核", "驳回并填写原因"],
+      fields: {
+        target_load_percent: plan.load,
+        risk_index: plan.risk,
+        confidence_percent: plan.confidence,
+        approval_path: riskPath
+      }
+    },
+    approval: {
+      definition: "ammonia_load_adjustment",
+      form_fields: ["班次", "目标负荷", "约束解释", "风险等级", "预计收益", "回写范围"],
+      write_back_after_approved: ["MES班次计划", "交接班摘要", "飞书多维表格复盘"]
+    },
+    base_record: {
+      table: "合成氨调度复盘库",
+      key_fields: ["shift_id", "scenario", "target_load", "accepted", "reject_reason", "actual_delta", "operator_note"],
+      current_sample: {
+        shift_id: "NH3-20260804-D",
+        scenario: text.mode,
+        target_load: `${plan.load}%`,
+        expected_margin: `${plan.margin}%`,
+        risk_index: plan.risk
+      }
+    },
+    task: {
+      title: "跟踪负荷调整执行效果",
+      owners: ["调度员", "班长", "设备工程师"],
+      due: "本班结束前",
+      checklist: ["确认DCS historian实际负荷", "记录未采纳原因", "班后复盘收益归因"]
+    },
+    callback: {
+      events: ["im.message.receive_v1", "card.action.trigger", "approval.instance.status_changed", "bitable.record.changed"],
+      guardrails: ["签名校验", "幂等键", "DCS/SIS只读", "低置信度自动降级人工"]
+    },
+    aily: {
+      entry: "合成氨调度问答助手",
+      grounded_sources: ["班次事实表", "调度复盘库", "异常经验库", "APC/RTO约束摘要"]
+    }
+  };
+}
+
+function renderFeishuHub(plan, text) {
+  const contract = feishuContract(plan, text);
+  const cards = [
+    { title: "互动卡片", body: `发送到${contract.card.target_chat}，按钮回传采纳、复核或驳回原因。`, tag: "im:message" },
+    { title: "负荷审批", body: `审批定义：${contract.approval.definition}；当前风险走“${contract.card.fields.approval_path}”。`, tag: "approval" },
+    { title: "多维表格复盘", body: `写入${contract.base_record.table}，字段包含班次、目标负荷、采纳状态、执行偏差和未采纳原因。`, tag: "base" },
+    { title: "飞书任务", body: `${contract.task.title}，本班结束前完成负荷、收益和异常复核。`, tag: "task" },
+    { title: "事件回调", body: "卡片点击、审批状态、复盘表变更统一进入后端事件队列，按幂等键入库。", tag: "event" },
+    { title: "Aily问答", body: "调度员可追问“为什么不升负荷”“驳回原因是否影响下次建议”等现场问题。", tag: "Aily" }
+  ];
+  document.getElementById("feishuHub").innerHTML = cards.map(item => `
+    <article>
+      <b>${item.title}</b>
+      <span>${item.body}</span>
+      <em class="tag">${item.tag}</em>
+    </article>
+  `).join("");
+  document.getElementById("feishuPayload").textContent = JSON.stringify(contract, null, 2);
+}
+
 function knowledge(plan) {
   return [
     { title: "合成负荷指令库", body: `输入快照、目标负荷 ${plan.load}%、审批人、采纳状态和实际偏差进入统一记录。`, level: "good" },
@@ -277,6 +344,7 @@ function render() {
   renderList("constraints", constraints(plan));
   renderList("benefitTrace", benefitTrace(plan));
   document.getElementById("feishuPreview").innerHTML = feishu(plan, text);
+  renderFeishuHub(plan, text);
   renderList("knowledgeLoop", knowledge(plan));
   renderList("roleViews", roleViews(plan));
   renderList("dataInterfaces", dataInterfaces());

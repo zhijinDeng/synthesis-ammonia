@@ -459,6 +459,7 @@ def build_final_doc():
         ],
         [1.2, 2.45, 2.75],
     )
+    para(doc, "本轮已完成两项飞书原型交付：决赛完整方案在线稿 https://larkcommunity.feishu.cn/docx/AYyad50itooOPxxZpQacgSqIn2c ；合成氨调度复盘库 Base 原型 https://larkcommunity.feishu.cn/base/QzENbAkl1aYQGds8dBacqu6Inue 。企业真实试点时，可将互动卡片按钮、审批状态和多维表格记录通过事件回调串成一条执行链。")
     doc.add_heading("七、落地验证", level=1)
     numbers(doc, [
         "30天：数据口径、接口映射、飞书草案、班次事实表。",
@@ -632,6 +633,14 @@ def write_platform():
           <div class="panel-title"><span>30/60/90天试点交付</span><strong>可验收</strong></div>
           <div id="pilotRoadmap" class="roadmap"></div>
         </section>
+        <section class="panel">
+          <div class="panel-title"><span>飞书调度中枢</span><strong id="feishuLiveState">卡片 / 审批 / Base / 任务</strong></div>
+          <div id="feishuHub" class="feishu-hub"></div>
+          <div class="payload-box">
+            <div><b>事件回调与数据写入样例</b><span>按当前滑块实时生成，可作为企业自建应用后端的字段契约。</span></div>
+            <pre id="feishuPayload"></pre>
+          </div>
+        </section>
       </section>
 
       <aside class="rail">
@@ -653,6 +662,8 @@ def write_platform():
             <li>负荷调整审批 approval_code</li>
             <li>多维表格读写权限与字段映射</li>
             <li>事件订阅回调地址与签名校验</li>
+            <li>互动卡片按钮回传采纳、驳回、要求复核</li>
+            <li>Aily 问答读取班次事实表和调度知识库</li>
           </ul>
         </section>
       </aside>
@@ -855,13 +866,56 @@ output { font-weight: 700; text-align: right; }
 .roadmap article { padding: 14px; border-radius: 8px; border: 1px solid #dbe6ee; background: linear-gradient(180deg,#f8fbfd,#fff); }
 .roadmap b { display: block; margin-bottom: 8px; color: var(--navy); font-size: 16px; }
 .roadmap span { display: block; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.feishu-hub {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 12px;
+  padding: 16px;
+}
+.feishu-hub article {
+  min-height: 132px;
+  padding: 14px;
+  background: #f7fafc;
+  border: 1px solid #dfe8ef;
+  border-left: 5px solid var(--blue);
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.feishu-hub b { display: block; margin-bottom: 7px; color: var(--navy); font-size: 15px; }
+.feishu-hub span { display: block; color: var(--muted); }
+.payload-box {
+  display: grid;
+  grid-template-columns: minmax(210px, 280px) minmax(0, 1fr);
+  gap: 12px;
+  margin: 0 16px 16px;
+  padding: 14px;
+  background: #10283b;
+  color: #e7f3fb;
+  border-radius: 8px;
+}
+.payload-box b { display: block; margin-bottom: 8px; color: #fff; }
+.payload-box span { display: block; color: #c8dae7; font-size: 13px; line-height: 1.55; }
+.payload-box pre {
+  max-height: 320px;
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  color: #dcecf5;
+  background: #0b1c2a;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
 @media (max-width: 1180px) {
   .shell { grid-template-columns: 320px minmax(0,1fr); }
   .rail:last-child { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); }
 }
 @media (max-width: 860px) {
   .topbar { flex-direction: column; }
-  .shell, .grid-2, .scenario-cards, .roadmap, .kpi-row, .rail:last-child { grid-template-columns: 1fr; }
+  .shell, .grid-2, .scenario-cards, .roadmap, .kpi-row, .rail:last-child, .feishu-hub, .payload-box { grid-template-columns: 1fr; }
   .slider { grid-template-columns: 1fr 1fr 34px; }
 }
 @media (max-width: 560px) {
@@ -1052,6 +1106,73 @@ function feishu(plan, text) {
   `;
 }
 
+function feishuContract(plan, text) {
+  const riskPath = plan.risk > 55 ? "班长确认 → 调度主管复核 → 安环知会" : "班长确认";
+  return {
+    card: {
+      target_chat: "合成氨当班调度群",
+      title: `${text.mode}｜合成氨负荷调整建议`,
+      buttons: ["采纳并发起审批", "要求复核", "驳回并填写原因"],
+      fields: {
+        target_load_percent: plan.load,
+        risk_index: plan.risk,
+        confidence_percent: plan.confidence,
+        approval_path: riskPath
+      }
+    },
+    approval: {
+      definition: "ammonia_load_adjustment",
+      form_fields: ["班次", "目标负荷", "约束解释", "风险等级", "预计收益", "回写范围"],
+      write_back_after_approved: ["MES班次计划", "交接班摘要", "飞书多维表格复盘"]
+    },
+    base_record: {
+      table: "合成氨调度复盘库",
+      key_fields: ["shift_id", "scenario", "target_load", "accepted", "reject_reason", "actual_delta", "operator_note"],
+      current_sample: {
+        shift_id: "NH3-20260804-D",
+        scenario: text.mode,
+        target_load: `${plan.load}%`,
+        expected_margin: `${plan.margin}%`,
+        risk_index: plan.risk
+      }
+    },
+    task: {
+      title: "跟踪负荷调整执行效果",
+      owners: ["调度员", "班长", "设备工程师"],
+      due: "本班结束前",
+      checklist: ["确认DCS historian实际负荷", "记录未采纳原因", "班后复盘收益归因"]
+    },
+    callback: {
+      events: ["im.message.receive_v1", "card.action.trigger", "approval.instance.status_changed", "bitable.record.changed"],
+      guardrails: ["签名校验", "幂等键", "DCS/SIS只读", "低置信度自动降级人工"]
+    },
+    aily: {
+      entry: "合成氨调度问答助手",
+      grounded_sources: ["班次事实表", "调度复盘库", "异常经验库", "APC/RTO约束摘要"]
+    }
+  };
+}
+
+function renderFeishuHub(plan, text) {
+  const contract = feishuContract(plan, text);
+  const cards = [
+    { title: "互动卡片", body: `发送到${contract.card.target_chat}，按钮回传采纳、复核或驳回原因。`, tag: "im:message" },
+    { title: "负荷审批", body: `审批定义：${contract.approval.definition}；当前风险走“${contract.card.fields.approval_path}”。`, tag: "approval" },
+    { title: "多维表格复盘", body: `写入${contract.base_record.table}，字段包含班次、目标负荷、采纳状态、执行偏差和未采纳原因。`, tag: "base" },
+    { title: "飞书任务", body: `${contract.task.title}，本班结束前完成负荷、收益和异常复核。`, tag: "task" },
+    { title: "事件回调", body: "卡片点击、审批状态、复盘表变更统一进入后端事件队列，按幂等键入库。", tag: "event" },
+    { title: "Aily问答", body: "调度员可追问“为什么不升负荷”“驳回原因是否影响下次建议”等现场问题。", tag: "Aily" }
+  ];
+  document.getElementById("feishuHub").innerHTML = cards.map(item => `
+    <article>
+      <b>${item.title}</b>
+      <span>${item.body}</span>
+      <em class="tag">${item.tag}</em>
+    </article>
+  `).join("");
+  document.getElementById("feishuPayload").textContent = JSON.stringify(contract, null, 2);
+}
+
 function knowledge(plan) {
   return [
     { title: "合成负荷指令库", body: `输入快照、目标负荷 ${plan.load}%、审批人、采纳状态和实际偏差进入统一记录。`, level: "good" },
@@ -1160,6 +1281,7 @@ function render() {
   renderList("constraints", constraints(plan));
   renderList("benefitTrace", benefitTrace(plan));
   document.getElementById("feishuPreview").innerHTML = feishu(plan, text);
+  renderFeishuHub(plan, text);
   renderList("knowledgeLoop", knowledge(plan));
   renderList("roleViews", roleViews(plan));
   renderList("dataInterfaces", dataInterfaces());
@@ -1262,6 +1384,8 @@ python -m http.server 4173
 
 - 飞书在线稿：`https://larkcommunity.feishu.cn/docx/AYyad50itooOPxxZpQacgSqIn2c`
 
+- 飞书 Base 原型：`https://larkcommunity.feishu.cn/base/QzENbAkl1aYQGds8dBacqu6Inue`
+
 - `提交材料/00_提交信息汇总.docx`
 - `提交材料/01_开题报告.docx`
 - `提交材料/02_整体解决方案书.docx`
@@ -1337,6 +1461,8 @@ python -m http.server 4173
 ### 方案体验入口 & demo展示视频
 
 体验入口：本地打开 `D:\\云图-合成氨-邓植斤\\index.html`；GitHub 仓库：`https://github.com/zhijinDeng/synthesis-ammonia`。
+
+飞书原型：决赛完整方案在线稿 `https://larkcommunity.feishu.cn/docx/AYyad50itooOPxxZpQacgSqIn2c`；合成氨调度复盘库 Base 原型 `https://larkcommunity.feishu.cn/base/QzENbAkl1aYQGds8dBacqu6Inue`。
 
 Demo录制流程控制在3-5分钟：切换稳氨/保供/护机/错峰场景，拖动订单、能源、设备健康和库存滑块，展示目标负荷、三案比选、APC/RTO对接、机理/PINN可信模型、飞书卡片/审批、多维表格复盘和知识库自迭代。
 

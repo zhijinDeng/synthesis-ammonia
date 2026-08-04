@@ -26,11 +26,13 @@ python -m http.server 4173
 
 访问 `http://localhost:4173`。
 
-## 提交材料
-
-- 飞书在线稿：`https://larkcommunity.feishu.cn/docx/AYyad50itooOPxxZpQacgSqIn2c`
-
-- `提交材料/00_提交信息汇总.docx`
+## 提交材料
+
+- 飞书在线稿：`https://larkcommunity.feishu.cn/docx/AYyad50itooOPxxZpQacgSqIn2c`
+
+- 飞书 Base 原型：`https://larkcommunity.feishu.cn/base/QzENbAkl1aYQGds8dBacqu6Inue`
+
+- `提交材料/00_提交信息汇总.docx`
 - `提交材料/01_开题报告.docx`
 - `提交材料/02_整体解决方案书.docx`
 - `提交材料/03_调控师操作手册.docx`

@@ -38,6 +38,8 @@
 
 体验入口：本地打开 `D:\云图-合成氨-邓植斤\index.html`；GitHub 仓库：`https://github.com/zhijinDeng/synthesis-ammonia`。
 
+飞书原型：决赛完整方案在线稿 `https://larkcommunity.feishu.cn/docx/AYyad50itooOPxxZpQacgSqIn2c`；合成氨调度复盘库 Base 原型 `https://larkcommunity.feishu.cn/base/QzENbAkl1aYQGds8dBacqu6Inue`。
+
 Demo录制流程控制在3-5分钟：切换稳氨/保供/护机/错峰场景，拖动订单、能源、设备健康和库存滑块，展示目标负荷、三案比选、APC/RTO对接、机理/PINN可信模型、飞书卡片/审批、多维表格复盘和知识库自迭代。
 
 ## 三、自由展示区

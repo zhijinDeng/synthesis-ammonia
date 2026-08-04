@@ -1,0 +1,4 @@
+shift_id,proposal_id,scenario,target_load_percent,risk_index,confidence_percent,expected_margin_percent,approval_path,accepted,reject_reason,actual_load_percent,actual_margin_percent,operator_note
+NH3-20260804-D,P-0001,稳氨优化,82,31,88,5.4,班长确认,是,,81,4.9,负荷调整平稳，液氨库存回到安全区间
+NH3-20260804-N,P-0002,保供补氨,91,47,84,6.2,班长确认,是,,90,5.8,尿素溶液订单优先，下游消纳正常
+NH3-20260805-D,P-0003,护机稳产,68,63,76,2.1,班长确认→调度主管复核,否,压缩机振动趋势偏高,,,转设备工程师复核后再执行

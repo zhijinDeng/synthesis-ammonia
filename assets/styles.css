@@ -187,13 +187,56 @@ output { font-weight: 700; text-align: right; }
 .roadmap article { padding: 14px; border-radius: 8px; border: 1px solid #dbe6ee; background: linear-gradient(180deg,#f8fbfd,#fff); }
 .roadmap b { display: block; margin-bottom: 8px; color: var(--navy); font-size: 16px; }
 .roadmap span { display: block; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.feishu-hub {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 12px;
+  padding: 16px;
+}
+.feishu-hub article {
+  min-height: 132px;
+  padding: 14px;
+  background: #f7fafc;
+  border: 1px solid #dfe8ef;
+  border-left: 5px solid var(--blue);
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.feishu-hub b { display: block; margin-bottom: 7px; color: var(--navy); font-size: 15px; }
+.feishu-hub span { display: block; color: var(--muted); }
+.payload-box {
+  display: grid;
+  grid-template-columns: minmax(210px, 280px) minmax(0, 1fr);
+  gap: 12px;
+  margin: 0 16px 16px;
+  padding: 14px;
+  background: #10283b;
+  color: #e7f3fb;
+  border-radius: 8px;
+}
+.payload-box b { display: block; margin-bottom: 8px; color: #fff; }
+.payload-box span { display: block; color: #c8dae7; font-size: 13px; line-height: 1.55; }
+.payload-box pre {
+  max-height: 320px;
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  color: #dcecf5;
+  background: #0b1c2a;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
 @media (max-width: 1180px) {
   .shell { grid-template-columns: 320px minmax(0,1fr); }
   .rail:last-child { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); }
 }
 @media (max-width: 860px) {
   .topbar { flex-direction: column; }
-  .shell, .grid-2, .scenario-cards, .roadmap, .kpi-row, .rail:last-child { grid-template-columns: 1fr; }
+  .shell, .grid-2, .scenario-cards, .roadmap, .kpi-row, .rail:last-child, .feishu-hub, .payload-box { grid-template-columns: 1fr; }
   .slider { grid-template-columns: 1fr 1fr 34px; }
 }
 @media (max-width: 560px) {

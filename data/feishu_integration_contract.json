@@ -1,0 +1,45 @@
+{
+  "app": "ammonia_dispatch_copilot",
+  "feishu_objects": {
+    "interactive_card": {
+      "target": "合成氨当班调度群",
+      "actions": ["accept_and_approve", "request_review", "reject_with_reason"],
+      "idempotency_key": ["shift_id", "proposal_id", "action_id"]
+    },
+    "approval": {
+      "definition_code": "ammonia_load_adjustment",
+      "low_risk_path": ["班长确认"],
+      "high_risk_path": ["班长确认", "调度主管复核", "安环知会"]
+    },
+    "bitable": {
+      "table_name": "合成氨调度复盘库",
+      "required_fields": [
+        "shift_id",
+        "proposal_id",
+        "scenario",
+        "target_load_percent",
+        "risk_index",
+        "confidence_percent",
+        "expected_margin_percent",
+        "approval_path",
+        "accepted",
+        "reject_reason",
+        "actual_load_percent",
+        "actual_margin_percent",
+        "operator_note"
+      ]
+    },
+    "task": {
+      "title": "跟踪负荷调整执行效果",
+      "checklist": ["确认DCS historian实际负荷", "记录未采纳原因", "班后复盘收益归因"]
+    },
+    "event_callback": {
+      "events": ["card.action.trigger", "approval.instance.status_changed", "bitable.record.changed"],
+      "guards": ["signature_verification", "replay_protection", "idempotent_write", "manual_downgrade_when_low_confidence"]
+    },
+    "aily": {
+      "entry": "合成氨调度问答助手",
+      "sources": ["班次事实表", "调度复盘库", "异常经验库", "APC/RTO约束摘要"]
+    }
+  }
+}

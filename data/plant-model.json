@@ -1,139 +1,115 @@
 {
-  "site": "Yingcheng integrated salt-alkali-fertilizer base",
-  "company_context": {
-    "company": "成都云图控股股份有限公司",
-    "strategic_fit": "70 万吨/年合成氨项目补齐氮肥原料，联动纯碱、氯化铵、尿浆溶液、复合肥和水溶肥，核心价值是提升原料自给率、降低外采波动并支撑盐-碱-肥循环产业链。"
-  },
+  "site": "Yingcheng integrated ammonia and fertilizer base",
+  "team": "氨智领航队",
+  "platform": "氨智领航调控师",
+  "positioning": "合成氨生产运行管理层的智能调度副驾驶，不直接控制DCS/SIS。",
   "units": [
     {
-      "id": "gasification",
-      "name": "制氢/原料气",
-      "capacity_tpd": 2300,
-      "constraints": ["天然气或煤气化负荷", "蒸汽平衡", "CO2 分离", "氢氮比"]
+      "id": "syngas",
+      "name": "制气/净化",
+      "key_constraints": [
+        "原料气稳定",
+        "蒸汽平衡",
+        "CO2分离",
+        "氢氮比"
+      ]
     },
     {
       "id": "synthesis",
       "name": "氨合成回路",
-      "capacity_tpd": 1950,
-      "constraints": ["合成塔入口温度", "循环压缩机负荷", "催化剂床层温升", "50%-100%安全负荷窗口"]
+      "key_constraints": [
+        "合成塔床层温升",
+        "循环压缩机负荷",
+        "最低稳定负荷",
+        "升降负荷速率"
+      ]
     },
     {
-      "id": "storage",
-      "name": "液氨储运",
-      "capacity_t": 12000,
-      "constraints": ["安全库存", "罐区压力", "外售与下游切换"]
+      "id": "tank",
+      "name": "液氨罐区",
+      "key_constraints": [
+        "安全库存",
+        "罐区压力",
+        "装车窗口",
+        "外售弹性"
+      ]
     },
     {
       "id": "downstream",
-      "name": "尿浆/复合肥/联碱协同",
-      "capacity_tpd": 3100,
-      "constraints": ["尿浆需求", "氯化铵平衡", "复合肥订单交期", "包装与物流能力"]
+      "name": "尿素溶液/复合肥/联碱配套",
+      "key_constraints": [
+        "订单交期",
+        "生产节拍",
+        "包装物流",
+        "客户优先级"
+      ]
     }
   ],
-  "orders": [
-    {"product": "95% 尿浆溶液", "priority": "high", "demand_t": 3200, "due_hours": 36},
-    {"product": "复合肥", "priority": "high", "demand_t": 6200, "due_hours": 72},
-    {"product": "液氨外售", "priority": "medium", "demand_t": 900, "due_hours": 48},
-    {"product": "联碱氯化铵配套", "priority": "medium", "demand_t": 1800, "due_hours": 60}
+  "optimization_modes": [
+    "稳氨",
+    "保供",
+    "护机",
+    "能源错峰"
   ],
-  "default_scenario": {
-    "demand_pressure": 76,
-    "energy_price": 64,
-    "equipment_health": 82,
-    "ammonia_inventory": 58,
-    "green_power": 34,
-    "market_volatility": 61
-  },
-  "kpi_formula_notes": {
-    "throughput": "由需求压力、设备健康、库存缺口和能源成本综合估算。",
-    "margin": "以负荷、能源价格和下游高优订单满足率估算。",
-    "carbon": "根据能源负荷和绿电/绿氢占比估算相对减排。",
-    "risk": "由低库存、设备健康、能源价格和市场波动触发。"
-  },
-  "enterprise_pilot": {
-    "do_first": [
-      "4-6 周影子运行，不影响原排产流程",
-      "先接 MES 日计划、ERP 订单、液氨库存、关键 DCS 摘要点和设备健康评分",
-      "输出三套方案：稳态、订单冲刺、设备保守",
-      "只统计被调度员采纳方案的实际收益"
-    ],
-    "do_not_do_in_mvp": [
-      "不直接修改 DCS/SIS 控制逻辑",
-      "不自动开停车",
-      "不把全厂所有点位一次性接入",
-      "不把市场价格自然波动计入系统收益"
-    ],
-    "interfaces": [
-      {"system": "MES", "data": "日计划、班次执行、产量、偏差原因", "frequency": "班次/小时"},
-      {"system": "ERP", "data": "订单、交期、价格、客户优先级", "frequency": "日/订单变更"},
-      {"system": "DCS historian", "data": "负荷、温度、压力、流量、电耗、蒸汽摘要点", "frequency": "5-15 分钟聚合"},
-      {"system": "Tank farm", "data": "液氨库存、罐区压力、装车窗口", "frequency": "分钟/小时"},
-      {"system": "EAM/点检", "data": "设备健康评分、检修计划、异常工单", "frequency": "日/事件"}
-    ],
-    "acceptance": [
-      "高优订单满足率不低于人工排产",
-      "单位氨能耗、库存占用或调度耗时至少一项稳定改善",
-      "关键数据延迟超过 15 分钟时自动降级",
-      "连续两天模型偏差超阈值时停用优化方案"
-    ]
-  },
-  "super_digital_employee": {
-    "positioning": "面向合成氨装置运行管理的软件层成本优化员工，核心任务是围绕氨合成负荷、氢氮比、循环压缩机、合成塔温升、液氨库存和下游用氨实时寻优。",
-    "exam_challenges": [
-      {"challenge": "调度寻优难", "capability": "吨氨成本雷达 + 稳氨/保供/护机三案比选 + 合成回路约束校验"},
-      {"challenge": "指挥效率低", "capability": "合成氨调控师指令窗口 + 审批链 + 负荷/库存/能耗执行监督"},
-      {"challenge": "知识传承难", "capability": "合成负荷指令库 + 氢氮比/床层温升异常库 + 未采纳原因标签 + 周度模型校准"}
-    ],
-    "closed_loop": [
-      "感知运行数据和外部成本",
-      "识别成本挖潜因子",
-      "生成稳氨/保供/护机多方案",
-      "人工确认后下达计划",
-      "自动监督执行偏差和效果",
-      "沉淀为知识库并触发模型迭代"
-    ]
-  },
-  "feishu_integration": {
-    "positioning": "把飞书作为合成氨调度方案的企业协同入口，而不是替代控制系统。",
-    "mvp_capabilities": [
-      "向合成氨当班调度群发送互动卡片",
-      "为高风险负荷调整生成审批实例草稿",
-      "接收审批通过、审批驳回和卡片按钮点击事件",
-      "把班后复盘、未采纳原因和实际偏差同步到知识库"
-    ],
-    "required_authorization": [
-      "企业自建应用 App ID 与 App Secret",
-      "应用机器人能力和目标群可见范围",
-      "审批定义 approval_code 与表单字段",
-      "事件订阅或回调公网地址",
-      "消息、审批、事件订阅相关权限由企业管理员开通"
-    ],
-    "safety_boundary": [
-      "飞书只承载通知、审批、复盘和留痕",
-      "任何飞书按钮都不直接写 DCS/SIS 控制参数",
-      "低置信或高风险方案必须走审批链",
-      "审批通过后也只回写 MES 计划和交接摘要"
-    ]
-  },
-  "reviewer_innovation": {
-    "persona": "把平台定位为合成氨当班调控师副驾驶：主动询问设备点检、订单刚性、库存边界和能价窗口，而不是只生成结论。",
-    "review_dimensions": [
-      "业务贴合：围绕合成氨与尿浆、复合肥、联碱、液氨外售协同",
-      "安全可信：工艺硬约束、安环红线、重大危险源监控和审批留痕",
-      "落地可执行：30/60/90 天影子运行与班组确认流程",
-      "创新辨识度：人机协同、反事实收益归因、未采纳原因知识化"
-    ],
-    "anti_empty_claims": [
-      "不承诺系统自动接管控制",
-      "不把市场行情自然波动算作系统收益",
-      "不绕过班长、调度主管和安环审批",
-      "不做脱离合成氨工艺对象的泛化大模型叙事"
-    ],
-    "interface_innovation_loop": [
-      "反事实收益归因：保留原计划、系统方案、采纳结果和实际执行结果",
-      "安全护栏链：工艺约束、安环红线、审批链和回滚条件同屏呈现",
-      "未采纳学习：未采纳原因结构化进入知识库，反向提升规则",
-      "协同触达：飞书卡片、审批、复盘草稿与当班方案联动"
-    ]
-  }
+  "interfaces": [
+    {
+      "system": "MES",
+      "fields": [
+        "日计划",
+        "班次产量",
+        "执行偏差",
+        "偏差原因"
+      ],
+      "frequency": "班次/小时"
+    },
+    {
+      "system": "ERP",
+      "fields": [
+        "订单",
+        "交期",
+        "客户优先级",
+        "价格口径"
+      ],
+      "frequency": "订单变更/日"
+    },
+    {
+      "system": "DCS historian",
+      "fields": [
+        "负荷",
+        "温度",
+        "压力",
+        "流量",
+        "电耗",
+        "蒸汽"
+      ],
+      "frequency": "5-15分钟聚合"
+    },
+    {
+      "system": "APC/RTO",
+      "fields": [
+        "约束余量",
+        "经济目标",
+        "连续负荷建议",
+        "回放验证"
+      ],
+      "frequency": "试点配置"
+    },
+    {
+      "system": "Feishu",
+      "fields": [
+        "卡片",
+        "审批",
+        "多维表格",
+        "Aily问答",
+        "事件回调"
+      ],
+      "frequency": "事件触发"
+    }
+  ],
+  "acceptance": [
+    "高优订单满足率不低于人工调度",
+    "单位氨能耗、库存占用、调度耗时或异常预警提前量至少一项改善",
+    "关键数据延迟超过15分钟自动降级",
+    "模型连续两天偏差超阈值时停用优化方案"
+  ]
 }

@@ -1,403 +1,150 @@
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>合成氨智能调控师工作台</title>
-    <link rel="stylesheet" href="assets/styles.css" />
-  </head>
-  <body>
-    <header class="topbar">
-      <div>
-        <p class="eyebrow">Yuntu Ammonia Dispatch Copilot</p>
-        <h1>合成氨智能调控师工作台</h1>
-      </div>
-      <div class="top-actions" aria-label="场景操作">
-        <button id="nightPlan" type="button">夜间稳态</button>
-        <button id="peakPlan" type="button">订单冲刺</button>
-        <button id="safePlan" type="button">设备保守</button>
-      </div>
-    </header>
-
-    <main class="layout">
-      <section class="left-rail" aria-label="调度输入">
-        <div class="panel">
-          <div class="panel-title">
-            <span>装置态势</span>
-            <strong id="plantState">稳态优化</strong>
-          </div>
-          <div class="metric-grid">
-            <article>
-              <span>目标负荷</span>
-              <strong id="loadKpi">86%</strong>
-            </article>
-            <article>
-              <span>日产氨</span>
-              <strong id="nh3Kpi">1,677 t</strong>
-            </article>
-            <article>
-              <span>毛利提升</span>
-              <strong id="marginKpi">+7.8%</strong>
-            </article>
-            <article>
-              <span>风险指数</span>
-              <strong id="riskKpi">32</strong>
-            </article>
-          </div>
-        </div>
-
-        <div class="panel controls">
-          <div class="panel-title">
-            <span>调度变量</span>
-            <strong>24h 滚动</strong>
-          </div>
-          <label>
-            <span>下游订单压力</span>
-            <input data-key="demand" type="range" min="0" max="100" value="76" />
-            <output id="demandOut">76</output>
-          </label>
-          <label>
-            <span>原料/蒸汽电价</span>
-            <input data-key="energy" type="range" min="0" max="100" value="64" />
-            <output id="energyOut">64</output>
-          </label>
-          <label>
-            <span>压缩机/合成塔健康</span>
-            <input data-key="health" type="range" min="0" max="100" value="82" />
-            <output id="healthOut">82</output>
-          </label>
-          <label>
-            <span>液氨库存水位</span>
-            <input data-key="inventory" type="range" min="0" max="100" value="58" />
-            <output id="inventoryOut">58</output>
-          </label>
-          <label>
-            <span>低碳能源可用</span>
-            <input data-key="green" type="range" min="0" max="100" value="34" />
-            <output id="greenOut">34</output>
-          </label>
-          <label>
-            <span>下游消纳波动</span>
-            <input data-key="market" type="range" min="0" max="100" value="61" />
-            <output id="marketOut">61</output>
-          </label>
-        </div>
-
-        <div class="panel">
-          <div class="panel-title">
-            <span>调控师指令窗口</span>
-            <strong id="operatorRole">当班调控</strong>
-          </div>
-          <div class="operator-actions">
-            <button type="button" data-action="recalc">重算计划</button>
-            <button type="button" data-action="handover">交接摘要</button>
-            <button type="button" data-action="accept">标记采纳</button>
-            <button type="button" data-action="feishuCard">飞书卡片</button>
-            <button type="button" data-action="feishuApproval">发起审批</button>
-            <button type="button" data-action="feishuReview">复盘同步</button>
-          </div>
-          <div id="operatorSummary" class="operator-summary"></div>
-          <div id="operatorLog" class="operator-log" aria-live="polite"></div>
-        </div>
-      </section>
-
-      <section class="main-stage" aria-label="调度工作台">
-        <div class="visual-band">
-          <img src="assets/process-map.svg" alt="合成氨生产协同流程图" />
-        </div>
-
-        <div class="panel framework-panel">
-          <div class="panel-title">
-            <span>在线工作流</span>
-            <strong id="frameworkScore">MVP 闭环</strong>
-          </div>
-          <div class="framework-grid">
-            <article>
-              <b>采集</b>
-              <span>读取 MES 计划、ERP 订单、罐区库存、DCS 摘要点和设备健康评分。</span>
-            </article>
-            <article>
-              <b>校验</b>
-              <span>先检查数据延迟、缺失、异常值和安环硬约束，再允许进入优化。</span>
-            </article>
-            <article>
-              <b>重算</b>
-              <span>生成稳态、冲刺、保守三套排产方案，给出差异和约束触发。</span>
-            </article>
-            <article>
-              <b>确认</b>
-              <span>低风险由班长确认，高风险由班长和调度主管双确认。</span>
-            </article>
-            <article>
-              <b>执行</b>
-              <span>只写入生产计划、交接班摘要和复盘记录，不直接写控制参数。</span>
-            </article>
-            <article>
-              <b>复盘</b>
-              <span>记录采纳原因、实际偏差、能耗、库存和订单交付结果。</span>
-            </article>
-          </div>
-        </div>
-
-        <div class="panel recommendation">
-          <div class="panel-title">
-            <span>调度方案</span>
-            <strong id="confidence">置信度 88%</strong>
-          </div>
-          <div class="recommendation-grid">
-            <div>
-              <h2 id="strategyTitle">保持高负荷，优先保障尿浆与复合肥订单</h2>
-              <p id="strategyText">
-                当前订单压力高、设备状态良好，合成回路目标维持 86% 负荷，夜间避开高价电窗口补库存，白班向尿浆和复合肥线倾斜。
-              </p>
-            </div>
-            <div class="decision-stack" id="decisionStack"></div>
-          </div>
-        </div>
-
-        <div class="two-col review-persona">
-          <div class="panel">
-            <div class="panel-title">
-              <span>调控工作说明</span>
-              <strong id="personaMode">当班辅助</strong>
-            </div>
-            <div id="personaCard" class="persona-card"></div>
-          </div>
-
-          <div class="panel">
-            <div class="panel-title">
-              <span>专家审核关注点</span>
-              <strong id="reviewStatus">待现场确认</strong>
-            </div>
-            <div id="reviewChecklist" class="review-board"></div>
-          </div>
-        </div>
-
-        <div class="panel innovation-panel">
-          <div class="panel-title">
-            <span>创新落点闭环</span>
-            <strong id="innovationMode">可审计试点</strong>
-          </div>
-          <div id="innovationLoop" class="innovation-grid"></div>
-        </div>
-
-        <div class="two-col">
-          <div class="panel">
-            <div class="panel-title">
-              <span>吨氨成本寻优雷达</span>
-              <strong id="costGap">可挖潜 4.8%</strong>
-            </div>
-            <div id="costRadar" class="cost-radar"></div>
-          </div>
-
-          <div class="panel">
-            <div class="panel-title">
-              <span>合成氨负荷三案比选</span>
-              <strong id="bestScenario">优选：冲刺</strong>
-            </div>
-            <div id="scenarioCompare" class="scenario-compare"></div>
-          </div>
-        </div>
-
-        <div class="two-col">
-          <div class="panel">
-            <div class="panel-title">
-              <span>班次排产</span>
-              <strong id="shiftMode">经济最优</strong>
-            </div>
-            <div id="gantt" class="gantt" aria-label="班次排产图"></div>
-          </div>
-
-          <div class="panel">
-            <div class="panel-title">
-              <span>价值测算</span>
-              <strong>保守口径</strong>
-            </div>
-            <div class="bars">
-              <div>
-                <span>订单满足率</span>
-                <b id="barOrder"></b>
-                <strong id="orderText">92%</strong>
-              </div>
-              <div>
-                <span>能耗优化</span>
-                <b id="barEnergy"></b>
-                <strong id="energyText">6%</strong>
-              </div>
-              <div>
-                <span>碳强度下降</span>
-                <b id="barCarbon"></b>
-                <strong id="carbonText">4%</strong>
-              </div>
-              <div>
-                <span>库存安全</span>
-                <b id="barStock"></b>
-                <strong id="stockText">78%</strong>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-title">
-            <span>约束解释</span>
-            <strong id="constraintLevel">4 条关注</strong>
-          </div>
-          <div id="constraintList" class="constraint-list"></div>
-        </div>
-
-        <div class="two-col">
-          <div class="panel">
-            <div class="panel-title">
-              <span>数据就绪度</span>
-              <strong id="dataScore">82%</strong>
-            </div>
-            <div id="dataReadiness" class="readiness-list"></div>
-          </div>
-
-          <div class="panel">
-            <div class="panel-title">
-              <span>模型治理</span>
-              <strong id="governanceMode">人机确认</strong>
-            </div>
-            <div id="governanceList" class="governance-list"></div>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-title">
-            <span>异常工况预案</span>
-            <strong id="playbookMode">动态生成</strong>
-          </div>
-          <div id="playbookList" class="playbook-list"></div>
-        </div>
-
-        <div class="two-col">
-          <div class="panel">
-            <div class="panel-title">
-              <span>执行监督闭环</span>
-              <strong id="executionMode">自动跟踪</strong>
-            </div>
-            <div id="executionMonitor" class="execution-list"></div>
-          </div>
-
-          <div class="panel">
-            <div class="panel-title">
-              <span>知识库自学习</span>
-              <strong id="learningMode">持续沉淀</strong>
-            </div>
-            <div id="knowledgeLoop" class="knowledge-list"></div>
-          </div>
-        </div>
-
-        <div class="panel feishu-panel">
-          <div class="panel-title">
-            <span>飞书协同中心</span>
-            <strong id="feishuStatus">待授权接入</strong>
-          </div>
-          <div class="feishu-grid">
-            <section>
-              <h3>调度卡片预览</h3>
-              <div id="feishuCard" class="feishu-card"></div>
-              <div class="feishu-actions">
-                <button type="button" data-feishu-action="card">生成群卡片</button>
-                <button type="button" data-feishu-action="approval">生成审批单</button>
-                <button type="button" data-feishu-action="review">同步复盘</button>
-              </div>
-            </section>
-            <section>
-              <h3>审批字段</h3>
-              <div id="feishuApproval" class="feishu-approval"></div>
-            </section>
-            <section>
-              <h3>协同日志</h3>
-              <div id="feishuEvents" class="feishu-events" aria-live="polite"></div>
-            </section>
-          </div>
-        </div>
-
-        <div class="two-col">
-          <div class="panel">
-            <div class="panel-title">
-              <span>企业试点清单</span>
-              <strong id="pilotMode">先影子运行</strong>
-            </div>
-            <div id="pilotChecklist" class="enterprise-list"></div>
-          </div>
-
-          <div class="panel">
-            <div class="panel-title">
-              <span>班组使用流程</span>
-              <strong>不改控制逻辑</strong>
-            </div>
-            <div id="shiftWorkflow" class="enterprise-list"></div>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-title">
-            <span>验收与停用条件</span>
-            <strong id="acceptanceMode">保守口径</strong>
-          </div>
-          <div id="acceptanceList" class="playbook-list"></div>
-        </div>
-      </section>
-
-      <aside class="right-rail" aria-label="现场协同">
-        <div class="panel">
-          <div class="panel-title">
-            <span>岗位视图</span>
-            <strong>当班</strong>
-          </div>
-          <ul class="source-list">
-            <li>班长：确认目标负荷、红线约束、交接班摘要。</li>
-            <li>调度：平衡订单、库存、下游产线和物流窗口。</li>
-            <li>设备：关注压缩机、合成塔、换热器和罐区健康。</li>
-            <li>安环：确认安全库存、罐区压力、能碳和环保指标。</li>
-          </ul>
-        </div>
-
-        <div class="panel">
-          <div class="panel-title">
-            <span>可执行边界</span>
-            <strong>MVP</strong>
-          </div>
-          <ul class="source-list">
-            <li>不直接改 DCS/SIS 控制逻辑。</li>
-            <li>不自动开停车，不绕过现有审批链。</li>
-            <li>只回写 MES 计划、交接摘要和复盘记录。</li>
-            <li>低置信、数据延迟、安环红线接近时自动降级。</li>
-          </ul>
-        </div>
-
-        <div class="panel">
-          <div class="panel-title">
-            <span>接口优先级</span>
-            <strong>首批</strong>
-          </div>
-          <ul class="source-list">
-            <li>MES：日计划、班次产量、执行偏差、偏差原因。</li>
-            <li>ERP：订单、交期、价格口径、客户优先级。</li>
-            <li>DCS historian：负荷、温度、压力、流量、电耗、蒸汽摘要点。</li>
-            <li>罐区/EAM：液氨库存、罐区压力、装车窗口、设备健康评分。</li>
-          </ul>
-        </div>
-
-        <div class="panel">
-          <div class="panel-title">
-            <span>飞书授权项</span>
-            <strong>上线前</strong>
-          </div>
-          <ul class="source-list">
-            <li>企业自建应用：App ID、App Secret、应用机器人能力。</li>
-            <li>消息范围：合成氨当班调度群、调度主管、设备与安环值班人。</li>
-            <li>审批定义：合成氨负荷调整审批 code 与表单字段。</li>
-            <li>事件回调：审批通过/驳回、卡片按钮点击、班后复盘提交。</li>
-          </ul>
-        </div>
-      </aside>
-    </main>
-
-    <script src="assets/app.js"></script>
-  </body>
-</html>
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>氨智领航调控师</title>
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Yuntu Ammonia Dispatch Expert</p>
+        <h1>氨智领航调控师</h1>
+        <p class="subtitle">面向合成氨装置运行管理的软件层成本优化、协同指挥与知识沉淀平台</p>
+      </div>
+      <div class="scenario-tabs" aria-label="调度场景">
+        <button data-preset="steady" type="button">稳氨</button>
+        <button data-preset="supply" type="button">保供</button>
+        <button data-preset="protect" type="button">护机</button>
+        <button data-preset="energy" type="button">错峰</button>
+      </div>
+    </header>
+
+    <main class="shell">
+      <aside class="rail">
+        <section class="panel">
+          <div class="panel-title"><span>实时调度输入</span><strong id="modeLabel">稳氨优化</strong></div>
+          <label class="slider"><span>下游订单压力</span><input data-key="demand" type="range" min="0" max="100" value="76" /><output id="demandOut">76</output></label>
+          <label class="slider"><span>能源/蒸汽成本</span><input data-key="energy" type="range" min="0" max="100" value="64" /><output id="energyOut">64</output></label>
+          <label class="slider"><span>压缩机/合成塔健康</span><input data-key="health" type="range" min="0" max="100" value="82" /><output id="healthOut">82</output></label>
+          <label class="slider"><span>液氨库存水位</span><input data-key="inventory" type="range" min="0" max="100" value="58" /><output id="inventoryOut">58</output></label>
+          <label class="slider"><span>低碳能源可用</span><input data-key="green" type="range" min="0" max="100" value="34" /><output id="greenOut">34</output></label>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title"><span>调控师指令</span><strong>当班</strong></div>
+          <div class="action-grid">
+            <button data-action="recalc" type="button">重算方案</button>
+            <button data-action="card" type="button">飞书卡片</button>
+            <button data-action="approval" type="button">发起审批</button>
+            <button data-action="bitable" type="button">写入复盘</button>
+          </div>
+          <div id="operatorNote" class="note"></div>
+          <div id="eventLog" class="log" aria-live="polite"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title"><span>上线边界</span><strong>MVP</strong></div>
+          <ul class="compact-list">
+            <li>不直接写DCS/SIS控制参数</li>
+            <li>不自动开停车，不绕过审批链</li>
+            <li>先影子运行，再低风险小闭环</li>
+            <li>数据低可信时降级人工流程</li>
+          </ul>
+        </section>
+      </aside>
+
+      <section class="stage">
+        <section class="hero-panel">
+          <img src="assets/process-map.svg" alt="合成氨至下游产品协同流程图" />
+          <div class="hero-copy">
+            <span>合成氨生产调度专家</span>
+            <h2 id="strategyTitle">稳定合成回路负荷，平衡液氨库存与下游消纳</h2>
+            <p id="strategyText"></p>
+          </div>
+        </section>
+
+        <section class="kpi-row">
+          <article><span>目标负荷</span><strong id="loadKpi">86%</strong><small>合成回路建议</small></article>
+          <article><span>日产氨</span><strong id="nh3Kpi">1,677t</strong><small>按70万吨/年折算</small></article>
+          <article><span>吨氨收益</span><strong id="marginKpi">+7.8%</strong><small>采纳方案口径</small></article>
+          <article><span>风险指数</span><strong id="riskKpi">32</strong><small>约束触发评分</small></article>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title"><span>三案比选</span><strong id="bestPlan">优选：稳氨</strong></div>
+          <div id="scenarioCards" class="scenario-cards"></div>
+        </section>
+
+        <section class="grid-2">
+          <section class="panel">
+            <div class="panel-title"><span>APC/RTO对接层</span><strong>不重做控制系统</strong></div>
+            <div id="interfaceMap" class="interface-map"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-title"><span>机理/PINN可信模型</span><strong id="modelTrust">可影子运行</strong></div>
+            <div id="modelCards" class="model-cards"></div>
+          </section>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title"><span>班次排产草案</span><strong id="shiftSummary">24h滚动</strong></div>
+          <div id="gantt" class="gantt"></div>
+        </section>
+
+        <section class="grid-2">
+          <section class="panel">
+            <div class="panel-title"><span>约束解释</span><strong id="constraintCount">5项</strong></div>
+            <div id="constraints" class="stack"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-title"><span>收益归因</span><strong>反事实口径</strong></div>
+            <div id="benefitTrace" class="stack"></div>
+          </section>
+        </section>
+
+        <section class="grid-2">
+          <section class="panel">
+            <div class="panel-title"><span>飞书班组闭环</span><strong id="feishuStatus">本地预览</strong></div>
+            <div id="feishuPreview" class="feishu-preview"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-title"><span>知识库自迭代</span><strong>每班沉淀</strong></div>
+            <div id="knowledgeLoop" class="stack"></div>
+          </section>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title"><span>30/60/90天试点交付</span><strong>可验收</strong></div>
+          <div id="pilotRoadmap" class="roadmap"></div>
+        </section>
+      </section>
+
+      <aside class="rail">
+        <section class="panel">
+          <div class="panel-title"><span>岗位视图</span><strong>同屏协同</strong></div>
+          <div id="roleViews" class="stack"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title"><span>数据接口优先级</span><strong>首批</strong></div>
+          <div id="dataInterfaces" class="stack"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title"><span>飞书授权项</span><strong>上线前</strong></div>
+          <ul class="compact-list">
+            <li>企业自建应用 App ID / App Secret</li>
+            <li>目标调度群机器人可见权限</li>
+            <li>负荷调整审批 approval_code</li>
+            <li>多维表格读写权限与字段映射</li>
+            <li>事件订阅回调地址与签名校验</li>
+          </ul>
+        </section>
+      </aside>
+    </main>
+
+    <script src="assets/app.js"></script>
+  </body>
+</html>

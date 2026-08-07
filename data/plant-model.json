@@ -86,6 +86,11 @@
       "rule": "边际贡献接近零时，将停车、重启、废料、人员和物料损失纳入取舍。"
     }
   ],
+  "supply_chain_orchestration": {
+    "problem": "现有MES、IoT、DCS、APC、压机、热电和经营数据分散，调度长需要人工跨系统梳理。",
+    "target": "形成产供销全线事实表、跨系统冲突识别、联动建议和调度长经验沉淀。",
+    "training_value": "把五年调度长经验拆成可检索案例、Aily问答、飞书复盘和新人训练样本。"
+  },
   "interfaces": [
     {
       "system": "MES",

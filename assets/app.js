@@ -240,9 +240,9 @@ function renderFeishuHub(plan, text) {
 
 function knowledge(plan) {
   return [
-    { title: "合成负荷指令库", body: `输入快照、目标负荷 ${plan.load}%、审批人、采纳状态和实际偏差进入统一记录。`, level: "good" },
-    { title: "异常经验库", body: "沉淀氢氮比偏差、床层温升异常、压缩机健康下降和液氨库存偏低场景。", level: "good" },
-    { title: "未采纳原因库", body: "把安全边界、设备风险、订单变化、数据不可信和经验判断结构化。", level: "warn" },
+    { title: "全线事实表", body: "把MES、IoT、DCS、APC、压机、热电和行情数据汇成调度长同屏口径。", level: "good" },
+    { title: "调度长经验库", body: `输入快照、目标负荷 ${plan.load}%、审批人、采纳状态、实际偏差和班长判断进入统一记录。`, level: "good" },
+    { title: "新人训练样本", body: "把安全边界、设备风险、订单变化、数据不可信和经验判断结构化，供新调度员按场景学习。", level: "warn" },
     { title: "周度校准", body: "高风险、高偏差、高价值样本进入模型校准和专家规则修订队列。", level: "good" }
   ];
 }

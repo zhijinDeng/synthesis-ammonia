@@ -3,28 +3,58 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>氨智领航调控师</title>
+    <title>氨智领航调控师</title>
+
+    <meta name="description" content="面向合成氨产供销协同、稳产预警与班组执行闭环的影子调度工作台" />
+
+    <link rel="icon" href="data:," />
     <link rel="stylesheet" href="assets/styles.css" />
   </head>
   <body>
     <header class="topbar">
-      <div>
+      <div class="brand-block">
         <p class="eyebrow">Yuntu Ammonia Dispatch Expert</p>
         <h1>氨智领航调控师</h1>
-        <p class="subtitle">面向合成氨装置运行管理的软件层成本优化、协同指挥与知识沉淀平台</p>
+        <p class="subtitle">合成氨产供销全线联动、稳产预警与班组执行闭环</p>
       </div>
-      <div class="scenario-tabs" aria-label="调度场景">
+      <div class="shift-meta" aria-label="班次状态">
+
+        <span><b id="shiftName">白班 D-01</b><small id="shiftClock">--:--:--</small></span>
+
+        <span><b>影子运行</b><small>不写 DCS / SIS</small></span>
+
+          <span><b id="headerDataState">样例字段可用</b><small>行情样例需核价</small></span>
+
+      </div>
+
+      <div class="scenario-tabs" aria-label="验收场景">
         <button data-preset="steady" type="button">稳氨</button>
         <button data-preset="supply" type="button">保供</button>
         <button data-preset="protect" type="button">护机</button>
         <button data-preset="energy" type="button">错峰</button>
       </div>
-    </header>
+    </header>
+
+    <nav class="workspace-tabs" aria-label="工作台视图">
+
+      <button class="active" data-workspace="overview" type="button">当班态势</button>
+
+      <button data-workspace="supply" type="button">产供销平衡</button>
+
+      <button data-workspace="stability" type="button">稳产预警</button>
+
+      <button data-workspace="execution" type="button">执行闭环</button>
+
+      <button data-workspace="system" type="button">依据与接入</button>
+
+      <span>验收样例 · 非企业实时数据</span>
+
+    </nav>
 
     <main class="shell">
       <aside class="rail">
-        <section class="panel">
-          <div class="panel-title"><span>实时调度输入</span><strong id="modeLabel">稳氨优化</strong></div>
+        <section class="panel input-panel" data-view="supply stability">
+          <div class="panel-title"><span>演练沙盘输入</span><strong id="modeLabel">稳氨优化</strong></div>
           <label class="slider"><span>下游订单压力</span><input data-key="demand" type="range" min="0" max="100" value="76" /><output id="demandOut">76</output></label>
           <label class="slider"><span>能源/蒸汽成本</span><input data-key="energy" type="range" min="0" max="100" value="64" /><output id="energyOut">64</output></label>
           <label class="slider"><span>压缩机/合成塔健康</span><input data-key="health" type="range" min="0" max="100" value="82" /><output id="healthOut">82</output></label>
@@ -33,22 +63,22 @@
           <label class="slider"><span>液氨市场价（元/吨）</span><input data-key="ammoniaPrice" type="range" min="1700" max="2800" step="10" value="2180" /><output id="ammoniaPriceOut">2180</output></label>
           <label class="slider"><span>硝酸行情趋势（%）</span><input data-key="nitricTrend" type="range" min="-20" max="20" value="-6" /><output id="nitricTrendOut">-6</output></label>
           <label class="slider"><span>压机弱信号强度</span><input data-key="compressorDrift" type="range" min="0" max="100" value="18" /><output id="compressorDriftOut">18</output></label>
-          <p class="data-caption">演示口径；试点时由 ERP、MES、IoT、DCS historian 与设备软件自动刷新。</p>
+          <p class="data-caption">仅用于决赛场景回放，不代表现场设定值。试点时本区改为 ERP、MES、IoT、DCS historian 与设备软件只读事实。</p>
         </section>
 
-        <section class="panel">
+        <section class="panel" data-view="overview execution">
           <div class="panel-title"><span>调控师指令</span><strong>当班</strong></div>
           <div class="action-grid">
-            <button data-action="recalc" type="button">重算方案</button>
-            <button data-action="card" type="button">飞书卡片</button>
-            <button data-action="approval" type="button">发起审批</button>
-            <button data-action="bitable" type="button">写入复盘</button>
+            <button data-action="recalc" type="button">按最新数据重算</button>
+            <button data-action="card" type="button">生成卡片草稿</button>
+            <button data-action="approval" type="button">生成审批草稿</button>
+            <button data-action="bitable" type="button">保存复盘草稿</button>
           </div>
           <div id="operatorNote" class="note"></div>
           <div id="eventLog" class="log" aria-live="polite"></div>
         </section>
 
-        <section class="panel">
+        <section class="panel" data-view="stability system">
           <div class="panel-title"><span>控制边界</span><strong>只读建议层</strong></div>
           <ul class="compact-list">
             <li>不直接写DCS/SIS控制参数</li>
@@ -61,38 +91,79 @@
 
       <section class="stage">
         <section class="source-strip" aria-label="数据接入状态">
-          <span><i class="pulse good"></i>IoT 18秒</span>
-          <span><i class="pulse good"></i>DCS摘要 45秒</span>
-          <span><i class="pulse good"></i>热电APC 2分钟</span>
-          <span><i class="pulse good"></i>MES 4分钟</span>
-          <span><i class="pulse warn"></i>市场行情 23分钟</span>
+          <span><i class="pulse good"></i>IoT样例延迟 18秒</span>
+          <span><i class="pulse good"></i>DCS摘要样例延迟 45秒</span>
+          <span><i class="pulse good"></i>热电APC样例延迟 2分钟</span>
+          <span><i class="pulse good"></i>MES样例延迟 4分钟</span>
+          <span><i class="pulse warn"></i>行情样例延迟 23分钟 · 不参与自动建议</span>
           <strong id="dataCompleteness">数据完整度 97.4%</strong>
         </section>
-        <section class="hero-panel">
-          <img src="assets/process-map.svg" alt="合成氨至下游产品协同流程图" />
+        <section class="hero-panel" data-view="overview supply stability">
           <div class="hero-copy">
-            <span>合成氨生产调度专家</span>
+            <div class="decision-status-line"><span>当前调度建议</span><strong id="recommendationPhase">待班长确认</strong></div>
             <h2 id="strategyTitle">稳定合成回路负荷，平衡液氨库存与下游消纳</h2>
-            <p id="strategyText"></p>
+            <p id="strategyText"></p>
+
+            <div class="decision-meta">
+
+              <span><b>建议编号</b><em id="recommendationId">NH3-D01-001</em></span>
+
+              <span><b>生成时间</b><em id="generatedAt">--:--</em></span>
+
+              <span><b>有效至</b><em id="validUntil">--:--</em></span>
+
+              <span><b>回滚触发</b><em id="rollbackRule">偏差&gt;3pct或关键数据失效</em></span>
+
+            </div>
           </div>
         </section>
 
-        <section class="kpi-row">
+        <section class="kpi-row" data-view="overview supply stability">
           <article><span>目标负荷</span><strong id="loadKpi">86%</strong><small>合成回路建议</small></article>
-          <article><span>日产氨</span><strong id="nh3Kpi">1,677t</strong><small>按70万吨/年折算</small></article>
-          <article><span>边际贡献</span><strong id="marginKpi">+7.8%</strong><small>固定成本吸收口径</small></article>
-          <article><span>风险指数</span><strong id="riskKpi">32</strong><small>约束触发评分</small></article>
+          <article><span>未来24小时预计产氨</span><strong id="nh3Kpi">1,677t</strong><small>验收样例推算值</small></article>
+          <article><span>24小时增量贡献</span><strong id="marginKpi">+72.4万</strong><small>可按明细复算</small></article>
+          <article><span>当前风险</span><strong id="riskKpi">可控 32</strong><small>0-100约束触发评分</small></article>
         </section>
 
-        <section class="panel">
+        <section class="panel" data-view="overview supply">
+
+          <div class="panel-title"><span>24小时液氨平衡</span><strong id="balanceState">安全余量 +136t</strong></div>
+
+          <div id="massBalance" class="balance-grid"></div>
+
+          <div class="inventory-band" aria-label="期末库存相对安全上下限"><i id="inventoryBand"></i></div>
+
+          <p id="balanceNote" class="data-caption"></p>
+
+        </section>
+
+        <section class="panel" data-view="overview stability">
           <div class="panel-title"><span>当班事件队列</span><strong id="eventQueueCount">3项待处置</strong></div>
           <div id="eventQueue" class="event-queue"></div>
         </section>
 
-        <section class="panel">
+        <section class="panel" data-view="overview stability">
+
+          <div class="panel-title"><span>压缩机弱信号证据</span><strong id="weakSignalState">持续观察</strong></div>
+
+          <div id="weakSignalEvidence" class="signal-grid"></div>
+
+          <p class="data-caption">本区是 AI 提示，不是 DCS 报警。只有异常状态且需要操作员及时响应的通知才能按报警管理；处置仍按现场规程和设备专业确认。</p>
+
+        </section>
+
+        <section class="panel" data-view="supply">
           <div class="panel-title"><span>产供销全线事实表</span><strong>保谁 / 降谁 / 停谁 / 是否外采</strong></div>
-          <div class="table-scroll"><table class="dispatch-table"><thead><tr><th>去向/装置</th><th>需求或负荷</th><th>单位液氨贡献</th><th>连续运行代价</th><th>当前动作</th><th>依据</th></tr></thead><tbody id="allocationTable"></tbody></table></div>
-          <p class="data-caption">贡献值为演示口径，企业试点由订单价格、变动成本、机会成本、启停损失和战略订单权重计算。</p>
+          <div class="table-scroll"><table class="dispatch-table"><thead><tr><th>去向/装置</th><th>需求或负荷</th><th>24h分配</th><th>单位液氨贡献</th><th>连续运行代价</th><th>当前动作</th><th>依据</th></tr></thead><tbody id="allocationTable"></tbody></table></div>
+          <div class="ledger-wrap">
+
+            <div id="ledgerRouteTabs" class="ledger-tabs" aria-label="经济口径选择"></div>
+
+            <div id="economicLedger" class="economic-ledger"></div>
+
+          </div>
+
+          <p class="data-caption">验收样例采用“产品净收入－非氨变动成本－包装物流－液氨机会成本－启停摊销＋违约避免额”的增量口径；正式试点由财务与运营共同固化，不重复计算固定成本吸收。</p>
         </section>
 
         <section class="panel">
@@ -103,10 +174,12 @@
         <section class="grid-2">
           <section class="panel">
             <div class="panel-title"><span>APC/RTO对接层</span><strong>不重做控制系统</strong></div>
-            <div id="interfaceMap" class="interface-map"></div>
+            <div id="interfaceMap" class="interface-map"></div>
+
+            <img class="process-map" src="assets/process-map.svg" alt="合成氨至下游产品协同流程图" />
           </section>
           <section class="panel">
-            <div class="panel-title"><span>机理/PINN可信模型</span><strong id="modelTrust">可影子运行</strong></div>
+            <div class="panel-title"><span>方案依据与适用范围</span><strong id="modelTrust">候选校准方法</strong></div>
             <div id="modelCards" class="model-cards"></div>
           </section>
         </section>
@@ -118,7 +191,19 @@
 
         <section class="panel">
           <div class="panel-title"><span>方案执行监督</span><strong id="executionState">待班长确认</strong></div>
-          <div id="executionMonitor" class="execution-monitor"></div>
+          <div id="executionMonitor" class="execution-monitor"></div>
+
+          <div class="workflow-actions" aria-label="验收状态推进">
+
+            <button data-workflow="submit" type="button">提交班长确认（演示）</button>
+
+            <button data-workflow="approve" type="button">记录班长确认（演示）</button>
+
+            <button data-workflow="track" type="button">开始执行跟踪（演示）</button>
+
+            <button data-workflow="review" type="button">完成班末复盘（演示）</button>
+
+          </div>
         </section>
 
         <section class="grid-2">
@@ -162,7 +247,7 @@
           <div class="feishu-links">
             <a href="https://www.feishu.cn/base/QzENbAkl1aYQGds8dBacqu6Inue" target="_blank" rel="noreferrer">打开调度复盘库</a>
             <a href="https://applink.feishu.cn/client/todo/task_list?guid=2ab6c357-dfeb-4f75-9aa3-781dc7ac7244" target="_blank" rel="noreferrer">打开执行任务清单</a>
-            <a href="https://applink.feishu.cn/client/todo/detail?guid=6e519bf6-1b28-4b90-b4e5-3a82fde9e1cb" target="_blank" rel="noreferrer">打开护机场景任务</a>
+            <a href="https://applink.feishu.cn/client/todo/detail?guid=44631b59-b834-47b1-a413-b751f2f291da&amp;suite_entity_num=t136777" target="_blank" rel="noreferrer">打开本轮验收任务 t136777</a>
             <a href="https://larkcommunity.feishu.cn/docx/AYyad50itooOPxxZpQacgSqIn2c" target="_blank" rel="noreferrer">打开在线方案文档</a>
           </div>
         </section>

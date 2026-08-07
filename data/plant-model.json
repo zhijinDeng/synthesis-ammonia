@@ -3,6 +3,8 @@
   "team": "氨智领航队",
   "platform": "氨智领航调控师",
   "positioning": "合成氨产供销全线联动数字调度长，不直接控制DCS/SIS。",
+  "delivery_status": "acceptance_demo",
+  "delivery_status_note": "网页数值为验收样例；企业点位、阈值、价格和成本口径尚待联调。",
   "final_priority_lanes": [
     {
       "priority": "主赛道",
@@ -35,13 +37,43 @@
   ],
   "units": [
     {
-      "id": "syngas",
-      "name": "制气/净化",
+      "id": "air_separation",
+      "name": "空分",
       "key_constraints": [
-        "原料气稳定",
+        "氧氮供应",
+        "压缩机余量",
+        "停车重启时间",
+        "与气化负荷匹配"
+      ]
+    },
+    {
+      "id": "gasification",
+      "name": "气化",
+      "key_constraints": [
+        "原料与氧气稳定",
         "蒸汽平衡",
+        "粗煤气流量",
+        "最低稳定负荷"
+      ]
+    },
+    {
+      "id": "purification",
+      "name": "净化/变换",
+      "key_constraints": [
         "CO2分离",
-        "氢氮比"
+        "硫含量",
+        "氢氮比",
+        "压降"
+      ]
+    },
+    {
+      "id": "compression",
+      "name": "合成气/循环气压缩",
+      "key_constraints": [
+        "振动",
+        "轴位移",
+        "防喘振裕度",
+        "轴承温度"
       ]
     },
     {
@@ -52,6 +84,16 @@
         "循环压缩机负荷",
         "最低稳定负荷",
         "升降负荷速率"
+      ]
+    },
+    {
+      "id": "refrigeration",
+      "name": "冷冻与氨分离",
+      "key_constraints": [
+        "冷量",
+        "压力",
+        "液位",
+        "氨分离效率"
       ]
     },
     {
@@ -95,7 +137,7 @@
     {
       "priority": 3,
       "name": "特殊情况取舍",
-      "rule": "确需中断时比较停空分、停合成气轮机和停下游装置的重启时间、废料、人员物料成本和影响范围。"
+      "rule": "确需中断时比较空分、合成气轮机驱动系统和下游装置的重启时间、废料、人员物料成本和影响范围；既往案例不固化为通用停机规则。"
     }
   ],
   "economic_decision_rules": [
@@ -105,7 +147,7 @@
     },
     {
       "name": "固定成本吸收",
-      "rule": "即使售价低于完全成本，只要能带走折旧、固定人工、公辅摊销或战略订单价值，也可能继续开。"
+      "rule": "作为管理解释单列展示，不重复计入增量贡献；继续生产仍需同时满足安全、连续和机会成本条件。"
     },
     {
       "name": "液氨机会成本",
@@ -146,7 +188,7 @@
     "execution_supervision": [
       "班长确认",
       "目标负荷",
-      "DCS实际负荷",
+      "现场执行反馈",
       "效果复核"
     ],
     "data_freshness_rule": "关键数据延迟超过15分钟时，不自动重算并转人工确认。"
@@ -168,16 +210,43 @@
       "给出责任人与复核时间"
     ],
     "actions": [
-      "生成班组卡片",
-      "转执行任务",
-      "写入复盘"
+      "生成班组卡片草稿",
+      "生成执行任务草稿",
+      "保存复盘草稿"
     ],
+    "capability_status": {
+      "base": "online_verified",
+      "verification_task": "online_verified",
+      "interactive_card": "prototype",
+      "approval": "prototype",
+      "task_ai_agent": "platform_enablement_required"
+    },
     "real_artifacts": {
       "document": "https://www.feishu.cn/docx/AYyad50itooOPxxZpQacgSqIn2c",
       "base": "https://www.feishu.cn/base/QzENbAkl1aYQGds8dBacqu6Inue",
-      "tasklist": "https://applink.feishu.cn/client/todo/task_list?guid=2ab6c357-dfeb-4f75-9aa3-781dc7ac7244"
+      "tasklist": "https://applink.feishu.cn/client/todo/task_list?guid=2ab6c357-dfeb-4f75-9aa3-781dc7ac7244",
+      "verification_task": "https://applink.feishu.cn/client/todo/detail?guid=44631b59-b834-47b1-a413-b751f2f291da&suite_entity_num=t136777"
     }
   },
+  "data_contract": [
+    "source_system",
+    "source_timestamp",
+    "ingested_at",
+    "unit",
+    "quality_code",
+    "owner",
+    "lineage_id"
+  ],
+  "recommendation_contract": [
+    "recommendation_id",
+    "input_snapshot_hash",
+    "rule_version",
+    "model_version",
+    "valid_until",
+    "approval_path",
+    "rollback_condition",
+    "idempotency_key"
+  ],
   "interfaces": [
     {
       "system": "MES",
@@ -237,7 +306,7 @@
     {
       "layer": "运行管理层",
       "system": "MES与合成氨调控平台",
-      "site_note": "导师口述合成氨调控平台为“海尔豪斯”，具体厂商名称待企业确认。",
+      "site_note": "企业访谈中记录为“海尔豪斯”调控平台，具体厂商名称待企业确认。",
       "role": "承接日计划、班次执行、交接摘要、负荷调整记录和复盘闭环。",
       "ai_boundary": "审批通过后只写计划摘要、交接说明和复盘结果。"
     },
@@ -251,7 +320,7 @@
     {
       "layer": "生产控制层",
       "system": "合成氨DCS",
-      "site_note": "导师口述为中控体系，具体名称待企业确认。",
+      "site_note": "企业访谈中记录为中控体系，具体名称待企业确认。",
       "role": "完成合成氨主装置的局部回路控制、顺控、报警和联锁保护。",
       "ai_boundary": "AI只读DCS historian摘要，不直接写控制参数。"
     },
@@ -265,7 +334,7 @@
     {
       "layer": "机组与压机层",
       "system": "SMC压机软件、康迪森机组数据",
-      "site_note": "导师口述机组数据已接入和利时平台，具体点位清单待企业确认。",
+      "site_note": "企业访谈中记录机组数据已接入和利时平台，具体点位清单待企业确认。",
       "role": "提供离心压缩机、气轮机驱动系统、关键机组健康和弱信号趋势。",
       "ai_boundary": "用于设备护机、弱信号预警和特殊停机取舍，不直接触发开停车。"
     }

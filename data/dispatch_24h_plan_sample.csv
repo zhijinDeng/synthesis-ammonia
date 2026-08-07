@@ -1,0 +1,7 @@
+record_status,recommendation_id,route,allocation_t_nh3,product_net_revenue_cny_per_t,non_ammonia_variable_cost_cny_per_t,packaging_logistics_cny_per_t,ammonia_opportunity_cost_cny_per_t,start_stop_amortization_cny_per_t,verified_penalty_avoidance_cny_per_t,incremental_contribution_cny_per_t,contribution_cny_24h,decision
+acceptance_demo,NH3-D01-001,复合肥刚性订单,521,3352,-400,-90,-2180,-160,0,522,271962,保
+acceptance_demo,NH3-D01-001,尿素溶液,676,3076,-360,-70,-2180,-60,0,406,274456,保
+acceptance_demo,NH3-D01-001,纯碱配套,421,2893,-300,-55,-2180,-50,0,308,129668,保
+acceptance_demo,NH3-D01-001,硝酸,312,2642,-310,-45,-2180,-86,0,21,6552,降
+acceptance_demo,NH3-D01-001,液氨外售,185,2180,-1978,-45,0,0,0,157,29045,保
+acceptance_demo,NH3-D01-001,外采液氨,0,0,-2260,0,0,0,0,-99,0,不采

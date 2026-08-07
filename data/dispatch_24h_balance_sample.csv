@@ -1,0 +1,2 @@
+record_status,recommendation_id,opening_usable_t,planned_production_t,external_purchase_t,planned_allocation_t,ending_usable_t,safety_floor_t,safety_headroom_t,hours_to_floor,check
+acceptance_demo,NH3-D01-001,1357,1734,0,2115,976,780,196,36,opening+production+purchase-allocation=ending

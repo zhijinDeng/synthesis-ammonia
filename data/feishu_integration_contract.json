@@ -1,5 +1,31 @@
 {
   "app": "ammonia_dispatch_copilot",
+  "delivery_status": "acceptance_demo",
+  "status_legend": {
+    "online_verified": ["bitable", "verification_task"],
+    "prototype": ["interactive_card", "approval", "event_callback", "feishu_ai"],
+    "platform_enablement_required": ["native_task_ai_agent"]
+  },
+  "fact_contract": [
+    "source_system",
+    "source_timestamp",
+    "ingested_at",
+    "unit",
+    "quality_code",
+    "owner",
+    "lineage_id"
+  ],
+  "recommendation_contract": [
+    "recommendation_id",
+    "input_snapshot_hash",
+    "rule_version",
+    "model_version",
+    "valid_until",
+    "approval_path",
+    "rollback_condition",
+    "payload_hash",
+    "idempotency_key"
+  ],
   "feishu_objects": {
     "interactive_card": {
       "target": "合成氨当班调度群",
@@ -20,7 +46,7 @@
         "target_load_percent",
         "risk_index",
         "confidence_percent",
-        "expected_margin_percent",
+        "expected_contribution_cny_24h",
         "approval_path",
         "accepted",
         "reject_reason",
@@ -32,11 +58,13 @@
     "task": {
       "title": "跟踪负荷调整执行效果",
       "checklist": ["确认DCS historian实际负荷", "记录未采纳原因", "班后复盘收益归因"],
-      "real_protect_scenario_task": "https://applink.feishu.cn/client/todo/detail?guid=6e519bf6-1b28-4b90-b4e5-3a82fde9e1cb"
+      "verification_task": "https://applink.feishu.cn/client/todo/detail?guid=44631b59-b834-47b1-a413-b751f2f291da&suite_entity_num=t136777",
+      "production_task_status": "create_only_after_approved_instance"
     },
     "event_callback": {
       "events": ["card.action.trigger", "approval.instance.status_changed", "bitable.record.changed"],
-      "guards": ["signature_verification", "replay_protection", "idempotent_write", "manual_downgrade_when_low_confidence"]
+      "guards": ["signature_verification", "replay_protection", "idempotent_write", "manual_downgrade_when_low_confidence"],
+      "failure_handling": ["bounded_retry", "dead_letter_queue", "manual_reconcile", "immutable_audit_log"]
     },
     "feishu_ai": {
       "entry": "合成氨调度问答助手",
@@ -49,7 +77,7 @@
   "operator_cockpit": {
     "event_priorities": ["P1", "P2", "P3"],
     "allocation_decisions": ["保", "稳", "降", "限", "停", "询价外采"],
-    "execution_checks": ["班长确认", "MES目标负荷", "DCS实际负荷", "班末效果复核"],
+    "execution_checks": ["班长确认", "MES目标负荷", "现场执行反馈", "班末效果复核"],
     "stale_data_threshold_minutes": 15
   }
 }

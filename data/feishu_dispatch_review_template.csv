@@ -1,4 +1,4 @@
-shift_id,proposal_id,scenario,target_load_percent,risk_index,confidence_percent,expected_margin_percent,approval_path,accepted,reject_reason,actual_load_percent,actual_margin_percent,operator_note
-NH3-20260804-D,P-0001,稳氨优化,82,31,88,5.4,班长确认,是,,81,4.9,负荷调整平稳，液氨库存回到安全区间
-NH3-20260804-N,P-0002,保供补氨,91,47,84,6.2,班长确认,是,,90,5.8,尿素溶液订单优先，下游消纳正常
-NH3-20260805-D,P-0003,护机稳产,68,63,76,2.1,班长确认→调度主管复核,否,压缩机振动趋势偏高,,,转设备工程师复核后再执行
+record_status,shift_id,recommendation_id,scenario,source_timestamp,quality_code,target_load_percent,risk_index,expected_contribution_cny_24h,rule_version,model_version,valid_until,approval_status,accepted,reject_reason,actual_load_percent,writeback_status,operator_note
+acceptance_demo,NH3-20260808-D,NH3-D01-001,稳氨优化,2026-08-08T04:05:00+08:00,DEMO,89,31,712000,RULE-0.3,NO_ENTERPRISE_MODEL,2026-08-08T04:20:00+08:00,draft,,, ,not_written,网页验收样例；未接企业DCS，不作为生产实绩
+acceptance_demo,NH3-20260808-D,NH3-D01-002,保供补氨,2026-08-08T04:30:00+08:00,DEMO,94,38,768000,RULE-0.3,NO_ENTERPRISE_MODEL,2026-08-08T04:45:00+08:00,approved_demo,yes,,93,demo_only,状态机演练记录；真实上线需审批实例与historian回传
+acceptance_demo,NH3-20260808-N,NH3-N01-001,护机稳产,2026-08-08T20:10:00+08:00,DEMO,76,67,421000,RULE-0.3,NO_ENTERPRISE_MODEL,2026-08-08T20:25:00+08:00,rejected_demo,no,压缩机趋势需设备专业复核,,not_written,口述案例仅作提示；未形成通用停机规则

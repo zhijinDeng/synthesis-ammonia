@@ -278,10 +278,11 @@ function decisionRules(plan) {
 
 function dataInterfaces() {
   return [
-    { title: "MES", body: "日计划、班次产量、执行偏差、偏差原因。", level: "good" },
-    { title: "ERP", body: "订单、交期、客户优先级、价格口径。", level: "good" },
-    { title: "DCS historian", body: "负荷、温度、压力、流量、电耗、蒸汽摘要。", level: "good" },
-    { title: "罐区/EAM", body: "液氨库存、罐区压力、装车窗口、设备健康评分。", level: "good" }
+    { title: "MES/合成氨调控平台", body: "承接日计划、班次执行、负荷调整记录和交接复盘；厂商名称按口述待企业确认。", level: "good" },
+    { title: "IoT数据平台", body: "采集合成氨DCS底层过程数据，进入班次事实表和弱信号趋势分析。", level: "good" },
+    { title: "合成氨DCS", body: "负责主装置局部回路、顺控、报警和联锁；AI只读取historian摘要。", level: "good" },
+    { title: "和利时DCS/热电APC", body: "提供热电、公辅和蒸汽管网约束，APC结果用于跨装置负荷联动。", level: "good" },
+    { title: "SMC压机/康迪森机组", body: "压缩机、气轮机驱动系统和关键机组健康趋势，用于护机和特殊停机取舍。", level: state.health < 68 ? "warn" : "good" }
   ];
 }
 

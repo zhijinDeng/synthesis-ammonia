@@ -63,6 +63,44 @@ FEISHU_DOC_URL = "https://www.feishu.cn/docx/AYyad50itooOPxxZpQacgSqIn2c"
 FEISHU_BASE_URL = "https://www.feishu.cn/base/QzENbAkl1aYQGds8dBacqu6Inue"
 FEISHU_TASK_URL = "https://applink.feishu.cn/client/todo/task_list?guid=2ab6c357-dfeb-4f75-9aa3-781dc7ac7244"
 
+EXISTING_SYSTEM_STACK = [
+    {
+        "layer": "运行管理层",
+        "system": "MES与合成氨调控平台",
+        "site_note": "导师口述合成氨调控平台为“海尔豪斯”，具体厂商名称待企业确认。",
+        "role": "承接日计划、班次执行、交接摘要、负荷调整记录和复盘闭环。",
+        "ai_boundary": "审批通过后只写计划摘要、交接说明和复盘结果。",
+    },
+    {
+        "layer": "数据采集层",
+        "system": "IoT平台",
+        "site_note": "采集合成氨DCS底层数据，形成可供上层系统读取的过程数据底座。",
+        "role": "读取负荷、温度、压力、流量、电耗、蒸汽、罐区等实时/准实时数据。",
+        "ai_boundary": "作为AI调控师的只读事实源，不替代DCS控制。",
+    },
+    {
+        "layer": "生产控制层",
+        "system": "合成氨DCS",
+        "site_note": "导师口述为中控体系，具体名称待企业确认。",
+        "role": "完成合成氨主装置的局部回路控制、顺控、报警和联锁保护。",
+        "ai_boundary": "AI只读DCS historian摘要，不直接写控制参数。",
+    },
+    {
+        "layer": "热电与公辅控制层",
+        "system": "和利时DCS与热电APC",
+        "site_note": "热电侧采用和利时DCS，并已有APC先进控制用于热电管网优化。",
+        "role": "提供蒸汽、电力、公辅负荷、管网约束和热电优化结果。",
+        "ai_boundary": "读取热电APC约束余量和能耗窗口，生成跨装置调度建议。",
+    },
+    {
+        "layer": "机组与压机层",
+        "system": "SMC压机软件、康迪森机组数据",
+        "site_note": "导师口述机组数据已接入和利时平台，具体点位清单待企业确认。",
+        "role": "提供离心压缩机、气轮机驱动系统、关键机组健康和弱信号趋势。",
+        "ai_boundary": "用于设备护机、弱信号预警和特殊停机取舍，不直接触发开停车。",
+    },
+]
+
 
 def write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -261,7 +299,19 @@ def build_solution_doc():
         ],
         [1.1, 2.35, 3.05],
     )
-    doc.add_heading("3. 飞书功能模块在方案中的位置", level=1)
+    doc.add_heading("3. 现有系统对接口径（待企业确认）", level=1)
+    para(
+        doc,
+        "企业导师补充了云图现场正在使用或建设中的关键系统。决赛方案据此把AI调控师定位为现有商业软件之上的“跨系统调度编排层”，不重做DCS、MES、APC或压机软件，而是理清各系统主要功能、数据流向和写回边界。",
+    )
+    table(
+        doc,
+        ["层级", "现场系统", "主要作用", "AI调控师边界"],
+        [[item["layer"], item["system"], item["role"], item["ai_boundary"]] for item in EXISTING_SYSTEM_STACK],
+        [1.05, 1.55, 2.55, 1.25],
+    )
+    bullets(doc, [f"{item['system']}：{item['site_note']}" for item in EXISTING_SYSTEM_STACK])
+    doc.add_heading("4. 飞书功能模块在方案中的位置", level=1)
     para(
         doc,
         "飞书不是附加展示入口，而是本方案把算法建议变成现场执行、责任留痕和知识迭代的组织操作层。合成氨调度建议只有进入当班群、审批链、任务监督和复盘库，才真正回应命题提出的指挥效率与知识传承问题。",
@@ -278,7 +328,7 @@ def build_solution_doc():
         ],
         [1.0, 1.25, 2.55, 1.6],
     )
-    doc.add_heading("4. 与APC/RTO体系的接口关系", level=1)
+    doc.add_heading("5. 与APC/RTO体系的接口关系", level=1)
     bullets(
         doc,
         [
@@ -288,7 +338,7 @@ def build_solution_doc():
             "MES侧：审批通过后只写入计划、交接摘要和复盘记录，不直接写入DCS/SIS控制参数。",
         ],
     )
-    doc.add_heading("5. 典型场景", level=1)
+    doc.add_heading("6. 典型场景", level=1)
     table(
         doc,
         ["场景", "触发条件", "推荐动作", "企业收益"],
@@ -300,7 +350,7 @@ def build_solution_doc():
         ],
         [1.0, 2.0, 2.45, 1.45],
     )
-    doc.add_heading("6. 跨装置联动的调度优先级", level=1)
+    doc.add_heading("7. 跨装置联动的调度优先级", level=1)
     para(
         doc,
         "企业导师补充的关键现场经验是：合成氨调度不能只看当班利润，必须先保安全，再保流程连续，只有在流程确实需要中断时才进入特殊取舍。DCS可以完成液位、阀门、局部顺控和联锁保护，但难以自动判断下游异常、气区设备、能源窗口和产品结构变化后的跨大单元联动，因此本方案把这部分做成AI调控师的规则层。",
@@ -315,7 +365,7 @@ def build_solution_doc():
         ],
         [0.9, 2.0, 2.35, 1.25],
     )
-    doc.add_heading("7. 30/60/90天落地路径", level=1)
+    doc.add_heading("8. 30/60/90天落地路径", level=1)
     table(
         doc,
         ["阶段", "目标", "交付物", "验收口径"],
@@ -326,7 +376,7 @@ def build_solution_doc():
         ],
         [0.75, 1.65, 2.15, 2.05],
     )
-    doc.add_heading("8. 验收与停用条件", level=1)
+    doc.add_heading("9. 验收与停用条件", level=1)
     bullets(
         doc,
         [
@@ -506,6 +556,20 @@ def build_final_doc():
         ],
         [1.15, 2.55, 2.7],
     )
+    doc.add_heading("五（二）现有系统接入假设", level=2)
+    table(
+        doc,
+        ["系统", "在现场承担的作用", "本方案调用方式"],
+        [
+            ["MES/合成氨调控平台", "日计划、班次执行、负荷调整记录和交接复盘。", "审批通过后写计划摘要、交接说明和复盘结果。"],
+            ["IoT平台", "采集合成氨DCS底层过程数据。", "作为班次事实表的数据源，供AI只读分析。"],
+            ["合成氨DCS", "合成氨主装置局部回路控制、顺控、报警和联锁。", "读取DCS historian摘要，不直接写控制参数。"],
+            ["和利时DCS/热电APC", "热电、公辅、蒸汽管网控制与优化。", "读取热电约束余量、能耗窗口和APC优化结果，用于跨装置负荷联动。"],
+            ["SMC压机软件/康迪森机组数据", "压缩机、气轮机驱动系统和关键机组健康监测。", "用于弱信号预警、护机方案和特殊停机取舍。"],
+        ],
+        [1.55, 2.35, 2.5],
+    )
+    para(doc, "上述系统名称按导师口述记录，厂商及点位清单在企业试点前需由信息化、生产、设备和热电专业共同确认。")
     doc.add_heading("六、飞书功能接入", level=1)
     table(
         doc,
@@ -1377,10 +1441,11 @@ function decisionRules(plan) {
 
 function dataInterfaces() {
   return [
-    { title: "MES", body: "日计划、班次产量、执行偏差、偏差原因。", level: "good" },
-    { title: "ERP", body: "订单、交期、客户优先级、价格口径。", level: "good" },
-    { title: "DCS historian", body: "负荷、温度、压力、流量、电耗、蒸汽摘要。", level: "good" },
-    { title: "罐区/EAM", body: "液氨库存、罐区压力、装车窗口、设备健康评分。", level: "good" }
+    { title: "MES/合成氨调控平台", body: "承接日计划、班次执行、负荷调整记录和交接复盘；厂商名称按口述待企业确认。", level: "good" },
+    { title: "IoT数据平台", body: "采集合成氨DCS底层过程数据，进入班次事实表和弱信号趋势分析。", level: "good" },
+    { title: "合成氨DCS", body: "负责主装置局部回路、顺控、报警和联锁；AI只读取historian摘要。", level: "good" },
+    { title: "和利时DCS/热电APC", body: "提供热电、公辅和蒸汽管网约束，APC结果用于跨装置负荷联动。", level: "good" },
+    { title: "SMC压机/康迪森机组", body: "压缩机、气轮机驱动系统和关键机组健康趋势，用于护机和特殊停机取舍。", level: state.health < 68 ? "warn" : "good" }
   ];
 }
 
@@ -1532,6 +1597,7 @@ def write_data_and_docs():
             {"system": "APC/RTO", "fields": ["约束余量", "经济目标", "连续负荷建议", "回放验证"], "frequency": "试点配置"},
             {"system": "Feishu", "fields": ["卡片", "审批", "多维表格", "Aily问答", "事件回调"], "frequency": "事件触发"},
         ],
+        "existing_system_stack": EXISTING_SYSTEM_STACK,
         "acceptance": [
             "高优订单满足率不低于人工调度",
             "单位氨能耗、库存占用、调度耗时或异常预警提前量至少一项改善",
@@ -1553,6 +1619,7 @@ def write_data_and_docs():
 - 飞书班组闭环：互动卡片、负荷调整审批、多维表格复盘、Aily 问答入口和事件回调。
 - 知识库自迭代：采纳、驳回、未采纳原因、执行偏差和班长经验进入合成负荷指令库。
 - 跨装置联动规则：安全第一、流程不中断第二、特殊情况再比较停空分/停气轮机/停下游的总损失。
+- 现有系统对接：按导师口述补充MES/合成氨调控平台、IoT采集、合成氨DCS、和利时DCS/热电APC、SMC压机软件和康迪森机组数据，正式试点前需企业确认厂商名称与点位清单。
 
 ## 本地查看
 
@@ -1652,6 +1719,10 @@ python -m http.server 4173
 
 本方案把导师补充的现场经验固化为调度优先级：第一是安全，不突破DCS/SIS、安环红线和关键设备保护；第二是流程不中断，尽量避免气区、合成和液氨去向被动停车，因为重启会带来时间、废料、人员和物料损失；第三是在确需中断时做取舍，比较停空分、停合成气轮机、停下游装置的总损失，并通过飞书审批和班后复盘沉淀专家规则。
 
+### 现有系统接入理解
+
+根据导师补充，生产侧已有MES/合成氨调控平台、IoT数据采集、合成氨DCS、热电侧和利时DCS、热电APC、SMC压机软件以及康迪森机组数据接入。方案不替代这些系统，而是把它们作为数据源、约束源和执行留痕源：DCS/APC提供过程与约束，IoT汇聚底层数据，MES承接计划与复盘，压机和机组软件提供弱信号预警，飞书承接审批、任务和知识沉淀。系统名称和点位清单需在企业试点前确认。
+
 ### 飞书功能模块如何支撑解题
 
 | 命题挑战 | 飞书模块支撑 | 企业侧沉淀 |
@@ -1718,6 +1789,7 @@ flowchart LR
 | 模块 | 作用 | 首批交付 |
 | --- | --- | --- |
 | 班次事实表 | 统一订单、库存、工况、设备、能源、审批口径 | 字段字典、数据质量评分、接口清单 |
+| 现有系统对接层 | 对接MES、IoT、DCS、热电APC、压机软件和机组数据 | 系统职责表、只读/写回边界、点位确认清单 |
 | 可信模型层 | 用机理约束和PINN校准限制算法建议 | 合成塔温升、氢氮比、压缩机、罐区约束 |
 | APC/RTO对接层 | 与企业已有控制和实时优化体系对话 | 目标负荷、升降速率、经济目标、回写边界 |
 | 三案优化器 | 输出稳氨、保供、护机三套可执行方案 | 目标负荷、风险指数、收益口径、回滚条件 |

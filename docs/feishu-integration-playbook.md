@@ -24,6 +24,16 @@
 
 决赛提交任务清单原型：`https://applink.feishu.cn/client/todo/task_list?guid=2ab6c357-dfeb-4f75-9aa3-781dc7ac7244`。企业试点时同一机制用于跟踪“采纳方案执行监督”“班后复盘补录”“周度规则校准”等任务。
 
+### 实际联调状态（2026-08-08）
+
+- 项目独立自建应用已启用机器人能力，版本 `1.0.1` 已发布。
+- `task:task:write`、`task:task:writeonly`、`task:tasklist:write` 已审批生效；应用不允许加入外部群，也不允许外部联系人发起私聊。
+- 已通过任务 v2 API 创建并指派真实验收任务 `t136777`，任务链接：`https://applink.feishu.cn/client/todo/detail?guid=44631b59-b834-47b1-a413-b751f2f291da&suite_entity_num=t136777`。
+- 验收任务明确验证“建议确认—责任到人—截止时间—执行状态—复盘结果”链路，并声明不写入 DCS/SIS 控制参数、不替代联锁和操作票。
+- 飞书任务原生 AI 智能体登记接口当前返回平台级 `403 NewForbiddenError`。普通任务写入已验证可用，因此现阶段以“项目机器人 + 任务 API + 人工审批”承载生产闭环；原生智能体登记不作为已交付能力，待飞书开放平台确认租户准入条件后再启用。
+
+应用密钥只保存在本机凭据配置中，不进入源码、文档、截图、日志或 Git 历史。
+
 ## 事件回调
 
 建议订阅 `card.action.trigger`、`approval.instance.status_changed`、`bitable.record.changed` 等事件。回调入口必须做签名校验、重放保护和幂等入库。低置信度、数据延迟、安环红线接近时，事件处理只保留记录，不触发后续回写。

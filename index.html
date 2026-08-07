@@ -30,6 +30,10 @@
           <label class="slider"><span>压缩机/合成塔健康</span><input data-key="health" type="range" min="0" max="100" value="82" /><output id="healthOut">82</output></label>
           <label class="slider"><span>液氨库存水位</span><input data-key="inventory" type="range" min="0" max="100" value="58" /><output id="inventoryOut">58</output></label>
           <label class="slider"><span>低碳能源可用</span><input data-key="green" type="range" min="0" max="100" value="34" /><output id="greenOut">34</output></label>
+          <label class="slider"><span>液氨市场价（元/吨）</span><input data-key="ammoniaPrice" type="range" min="1700" max="2800" step="10" value="2180" /><output id="ammoniaPriceOut">2180</output></label>
+          <label class="slider"><span>硝酸行情趋势（%）</span><input data-key="nitricTrend" type="range" min="-20" max="20" value="-6" /><output id="nitricTrendOut">-6</output></label>
+          <label class="slider"><span>压机弱信号强度</span><input data-key="compressorDrift" type="range" min="0" max="100" value="18" /><output id="compressorDriftOut">18</output></label>
+          <p class="data-caption">演示口径；试点时由 ERP、MES、IoT、DCS historian 与设备软件自动刷新。</p>
         </section>
 
         <section class="panel">
@@ -45,7 +49,7 @@
         </section>
 
         <section class="panel">
-          <div class="panel-title"><span>上线边界</span><strong>MVP</strong></div>
+          <div class="panel-title"><span>控制边界</span><strong>只读建议层</strong></div>
           <ul class="compact-list">
             <li>不直接写DCS/SIS控制参数</li>
             <li>不自动开停车，不绕过审批链</li>
@@ -56,6 +60,14 @@
       </aside>
 
       <section class="stage">
+        <section class="source-strip" aria-label="数据接入状态">
+          <span><i class="pulse good"></i>IoT 18秒</span>
+          <span><i class="pulse good"></i>DCS摘要 45秒</span>
+          <span><i class="pulse good"></i>热电APC 2分钟</span>
+          <span><i class="pulse good"></i>MES 4分钟</span>
+          <span><i class="pulse warn"></i>市场行情 23分钟</span>
+          <strong id="dataCompleteness">数据完整度 97.4%</strong>
+        </section>
         <section class="hero-panel">
           <img src="assets/process-map.svg" alt="合成氨至下游产品协同流程图" />
           <div class="hero-copy">
@@ -73,8 +85,14 @@
         </section>
 
         <section class="panel">
-          <div class="panel-title"><span>决赛主线</span><strong>先收束，再深入</strong></div>
-          <div id="finalLanes" class="final-lanes"></div>
+          <div class="panel-title"><span>当班事件队列</span><strong id="eventQueueCount">3项待处置</strong></div>
+          <div id="eventQueue" class="event-queue"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title"><span>产供销全线事实表</span><strong>保谁 / 降谁 / 停谁 / 是否外采</strong></div>
+          <div class="table-scroll"><table class="dispatch-table"><thead><tr><th>去向/装置</th><th>需求或负荷</th><th>单位液氨贡献</th><th>连续运行代价</th><th>当前动作</th><th>依据</th></tr></thead><tbody id="allocationTable"></tbody></table></div>
+          <p class="data-caption">贡献值为演示口径，企业试点由订单价格、变动成本、机会成本、启停损失和战略订单权重计算。</p>
         </section>
 
         <section class="panel">
@@ -96,6 +114,11 @@
         <section class="panel">
           <div class="panel-title"><span>班次排产草案</span><strong id="shiftSummary">24h滚动</strong></div>
           <div id="gantt" class="gantt"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title"><span>方案执行监督</span><strong id="executionState">待班长确认</strong></div>
+          <div id="executionMonitor" class="execution-monitor"></div>
         </section>
 
         <section class="grid-2">
@@ -121,15 +144,26 @@
         </section>
 
         <section class="panel">
-          <div class="panel-title"><span>30/60/90天试点交付</span><strong>可验收</strong></div>
-          <div id="pilotRoadmap" class="roadmap"></div>
-        </section>
-        <section class="panel">
-          <div class="panel-title"><span>飞书调度中枢</span><strong id="feishuLiveState">卡片 / 审批 / Base / 任务</strong></div>
+          <div class="panel-title"><span>飞书 AI 调度助手</span><strong id="feishuLiveState">有依据地回答，有边界地执行</strong></div>
+          <div class="ai-console">
+            <div class="ai-prompts" aria-label="常用追问">
+              <button data-question="nitric" type="button">为什么不建议硝酸满负荷？</button>
+              <button data-question="allocation" type="button">液氨涨价后该保谁？</button>
+              <button data-question="compressor" type="button">压机弱信号继续恶化怎么办？</button>
+            </div>
+            <div id="aiAnswer" class="ai-answer" aria-live="polite"></div>
+            <div class="ai-actions">
+              <button data-ai-action="card" type="button">生成班组卡片</button>
+              <button data-ai-action="task" type="button">转执行任务</button>
+              <button data-ai-action="review" type="button">写入复盘</button>
+            </div>
+          </div>
           <div id="feishuHub" class="feishu-hub"></div>
-          <div class="payload-box">
-            <div><b>事件回调与数据写入样例</b><span>按当前滑块实时生成，可作为企业自建应用后端的字段契约。</span></div>
-            <pre id="feishuPayload"></pre>
+          <div class="feishu-links">
+            <a href="https://www.feishu.cn/base/QzENbAkl1aYQGds8dBacqu6Inue" target="_blank" rel="noreferrer">打开调度复盘库</a>
+            <a href="https://applink.feishu.cn/client/todo/task_list?guid=2ab6c357-dfeb-4f75-9aa3-781dc7ac7244" target="_blank" rel="noreferrer">打开执行任务清单</a>
+            <a href="https://applink.feishu.cn/client/todo/detail?guid=6e519bf6-1b28-4b90-b4e5-3a82fde9e1cb" target="_blank" rel="noreferrer">打开护机场景任务</a>
+            <a href="https://larkcommunity.feishu.cn/docx/AYyad50itooOPxxZpQacgSqIn2c" target="_blank" rel="noreferrer">打开在线方案文档</a>
           </div>
         </section>
       </section>
@@ -151,16 +185,8 @@
         </section>
 
         <section class="panel">
-          <div class="panel-title"><span>飞书授权项</span><strong>上线前</strong></div>
-          <ul class="compact-list">
-            <li>企业自建应用 App ID / App Secret</li>
-            <li>目标调度群机器人可见权限</li>
-            <li>负荷调整审批 approval_code</li>
-            <li>多维表格读写权限与字段映射</li>
-            <li>事件订阅回调地址与签名校验</li>
-            <li>互动卡片按钮回传采纳、驳回、要求复核</li>
-            <li>Aily 问答读取班次事实表和调度知识库</li>
-          </ul>
+          <div class="panel-title"><span>数据新鲜度</span><strong>超15分钟降级</strong></div>
+          <div id="freshness" class="stack"></div>
         </section>
       </aside>
     </main>

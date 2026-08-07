@@ -121,6 +121,63 @@
     "target": "形成产供销全线事实表、跨系统冲突识别、联动建议和调度长经验沉淀。",
     "training_value": "把五年调度长经验拆成可检索案例、Aily问答、飞书复盘和新人训练样本。"
   },
+  "operator_cockpit": {
+    "event_queue": [
+      "产供销冲突",
+      "公辅能源窗口",
+      "关键设备弱信号"
+    ],
+    "allocation_table": [
+      "复合肥刚性订单",
+      "尿素溶液",
+      "纯碱配套",
+      "硝酸",
+      "液氨外售",
+      "外采液氨"
+    ],
+    "decision_outputs": [
+      "保",
+      "稳",
+      "降",
+      "限",
+      "停",
+      "询价外采"
+    ],
+    "execution_supervision": [
+      "班长确认",
+      "目标负荷",
+      "DCS实际负荷",
+      "效果复核"
+    ],
+    "data_freshness_rule": "关键数据延迟超过15分钟时，不自动重算并转人工确认。"
+  },
+  "feishu_ai": {
+    "grounded_sources": [
+      "产供销全线事实表",
+      "MES订单",
+      "DCS摘要",
+      "设备趋势",
+      "调度复盘库",
+      "处置规则"
+    ],
+    "answer_contract": [
+      "先给结论",
+      "列出当前数值",
+      "说明安全边界",
+      "标注事实来源",
+      "给出责任人与复核时间"
+    ],
+    "actions": [
+      "生成班组卡片",
+      "转执行任务",
+      "写入复盘"
+    ],
+    "real_artifacts": {
+      "document": "https://www.feishu.cn/docx/AYyad50itooOPxxZpQacgSqIn2c",
+      "base": "https://www.feishu.cn/base/QzENbAkl1aYQGds8dBacqu6Inue",
+      "tasklist": "https://applink.feishu.cn/client/todo/task_list?guid=2ab6c357-dfeb-4f75-9aa3-781dc7ac7244"
+    }
+  },
   "interfaces": [
     {
       "system": "MES",

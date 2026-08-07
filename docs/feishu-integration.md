@@ -16,14 +16,22 @@
 - 审批：高风险负荷调整创建审批实例，审批通过后只写MES计划和复盘记录。
 - 多维表格：班次事实、方案采纳、未采纳原因、执行偏差、周度校准状态。
 - 任务：采纳方案后生成执行监督任务，核对实际负荷、库存变化、能耗窗口和班后复盘。
-- Aily：支持调度员追问方案理由、约束解释、设备护机策略和液氨库存风险。
+- 飞书AI：支持调度员追问方案理由、约束解释、设备护机策略和液氨库存风险；回答必须标注班次事实、设备趋势和规则来源，无依据时转人工复核。
 - 事件回调：接收卡片点击、审批通过/驳回、任务关闭、复盘提交，并写入知识库。
 
 ## 已完成原型
 
 - 飞书在线完整方案稿：`https://www.feishu.cn/docx/AYyad50itooOPxxZpQacgSqIn2c`
-- 飞书 Base 调度复盘库原型：`https://www.feishu.cn/base/QzENbAkl1aYQGds8dBacqu6Inue`
-- 飞书任务清单：`https://applink.feishu.cn/client/todo/task_list?guid=2ab6c357-dfeb-4f75-9aa3-781dc7ac7244`
+- 飞书 Base 调度复盘库原型：`https://www.feishu.cn/base/QzENbAkl1aYQGds8dBacqu6Inue`，现有13个字段和3条完整场景样例。
+- 飞书任务清单：`https://applink.feishu.cn/client/todo/task_list?guid=2ab6c357-dfeb-4f75-9aa3-781dc7ac7244`，用于执行监督、复盘补录和规则校准。
+- 飞书护机场景执行任务：`https://applink.feishu.cn/client/todo/detail?guid=6e519bf6-1b28-4b90-b4e5-3a82fde9e1cb`，由调控师生成并分配给当前用户，包含压机复核、实际负荷与班末效果检查。
+
+## 飞书AI回答与动作契约
+
+- 回答顺序：先给结论，再列当前数值，随后说明安全边界、事实来源、责任人和复核时间。
+- 允许动作：生成班组卡片、转执行任务、写入复盘草稿；高风险动作继续走人工审批。
+- 知识来源：产供销全线事实表、MES订单、DCS摘要、设备趋势、调度复盘库和经批准的处置规则。
+- 禁止事项：无来源编造现场数值、直接写DCS/SIS、绕过班长/主管确认、把市场自然波动计入系统收益。
 
 ## 特殊停机取舍
 

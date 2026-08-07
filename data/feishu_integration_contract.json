@@ -31,15 +31,25 @@
     },
     "task": {
       "title": "跟踪负荷调整执行效果",
-      "checklist": ["确认DCS historian实际负荷", "记录未采纳原因", "班后复盘收益归因"]
+      "checklist": ["确认DCS historian实际负荷", "记录未采纳原因", "班后复盘收益归因"],
+      "real_protect_scenario_task": "https://applink.feishu.cn/client/todo/detail?guid=6e519bf6-1b28-4b90-b4e5-3a82fde9e1cb"
     },
     "event_callback": {
       "events": ["card.action.trigger", "approval.instance.status_changed", "bitable.record.changed"],
       "guards": ["signature_verification", "replay_protection", "idempotent_write", "manual_downgrade_when_low_confidence"]
     },
-    "aily": {
+    "feishu_ai": {
       "entry": "合成氨调度问答助手",
-      "sources": ["班次事实表", "调度复盘库", "异常经验库", "APC/RTO约束摘要"]
+      "sources": ["产供销全线事实表", "MES订单", "DCS摘要", "设备趋势", "调度复盘库", "处置规则"],
+      "answer_contract": ["先给结论", "列出当前数值", "说明安全边界", "标注事实来源", "给出责任人与复核时间"],
+      "actions": ["generate_shift_card", "create_execution_task", "draft_review_record"],
+      "guards": ["no_source_no_answer", "human_approval_for_high_risk", "never_write_dcs_or_sis"]
     }
+  },
+  "operator_cockpit": {
+    "event_priorities": ["P1", "P2", "P3"],
+    "allocation_decisions": ["保", "稳", "降", "限", "停", "询价外采"],
+    "execution_checks": ["班长确认", "MES目标负荷", "DCS实际负荷", "班末效果复核"],
+    "stale_data_threshold_minutes": 15
   }
 }

@@ -25,6 +25,10 @@
 - 飞书 Base 调度复盘库原型：`https://www.feishu.cn/base/QzENbAkl1aYQGds8dBacqu6Inue`
 - 飞书任务清单：`https://applink.feishu.cn/client/todo/task_list?guid=2ab6c357-dfeb-4f75-9aa3-781dc7ac7244`
 
+## 特殊停机取舍
+
+当流程无法维持连续时，飞书卡片不直接下达停机命令，而是列出停空分、停合成气轮机、停下游装置等备选方案的重启时间、废料损失、人员物料成本和影响范围。班长/主管审批通过后才进入MES计划摘要，执行结果写入Base复盘库，作为下一次同类场景的专家规则。
+
 ## 需要企业授权
 
 - 企业自建应用 App ID / App Secret。

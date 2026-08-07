@@ -254,6 +254,28 @@ function roleViews(plan) {
   ];
 }
 
+function decisionRules(plan) {
+  const continuityRisk = state.demand > 84 || state.inventory < 45 || state.energy > 78;
+  const equipmentRisk = state.health < 62 || plan.risk > 62;
+  return [
+    {
+      title: "第一优先级：安全",
+      body: equipmentRisk ? "设备或工艺风险升高，方案只保留降风险动作，严禁为了产量突破DCS/SIS和安环红线。" : "所有建议先通过合成塔、压缩机、罐区和环保约束筛选。",
+      level: equipmentRisk ? "danger" : "good"
+    },
+    {
+      title: "第二优先级：流程不中断",
+      body: continuityRisk ? "下游需求、库存或能源窗口正在挤压连续流程，优先做跨装置负荷联动，避免气化、净化、合成和液氨去向被动中断。" : "维持合成氨主流程连续，减少停车后重启时间、废料、人员和物料损失。",
+      level: continuityRisk ? "warn" : "good"
+    },
+    {
+      title: "第三优先级：特殊情况取舍",
+      body: "确需中断时比较停空分、停合成气轮机或停下游装置的重启时间、废料和影响范围；已验证场景优先保气轮机驱动关键系统，停空分需班长/主管确认。",
+      level: "warn"
+    }
+  ];
+}
+
 function dataInterfaces() {
   return [
     { title: "MES", body: "日计划、班次产量、执行偏差、偏差原因。", level: "good" },
@@ -347,6 +369,7 @@ function render() {
   renderFeishuHub(plan, text);
   renderList("knowledgeLoop", knowledge(plan));
   renderList("roleViews", roleViews(plan));
+  renderList("decisionRules", decisionRules(plan));
   renderList("dataInterfaces", dataInterfaces());
   document.getElementById("pilotRoadmap").innerHTML = roadmap().map(item => `<article><b>${item.title}</b><span>${item.body}</span></article>`).join("");
   renderEvents();

@@ -134,8 +134,19 @@ output { font-weight: 700; text-align: right; }
 .kpi-row span, .kpi-row small { display: block; color: var(--muted); font-size: 13px; }
 .kpi-row strong { display: block; margin: 10px 0 8px; color: var(--navy); font-size: 30px; line-height: 1; }
 .grid-2 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 18px; }
-.scenario-cards, .interface-map, .model-cards, .stack, .feishu-preview, .roadmap { display: grid; gap: 12px; padding: 16px; }
+.scenario-cards, .interface-map, .model-cards, .stack, .feishu-preview, .roadmap, .final-lanes { display: grid; gap: 12px; padding: 16px; }
 .scenario-cards { grid-template-columns: repeat(3, minmax(0,1fr)); }
+.final-lanes { grid-template-columns: repeat(4, minmax(0,1fr)); }
+.final-lanes article {
+  padding: 14px;
+  background: #f8fbfd;
+  border: 1px solid #d8e4ed;
+  border-radius: 8px;
+  min-width: 0;
+}
+.final-lanes em { display: inline-block; margin-bottom: 8px; color: var(--blue); font-style: normal; font-weight: 700; font-size: 12px; }
+.final-lanes b { display: block; margin-bottom: 6px; color: var(--navy); font-size: 14px; }
+.final-lanes span { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.52; }
 .scenario {
   padding: 14px;
   background: #f7fafc;
@@ -236,7 +247,7 @@ output { font-weight: 700; text-align: right; }
 }
 @media (max-width: 860px) {
   .topbar { flex-direction: column; }
-  .shell, .grid-2, .scenario-cards, .roadmap, .kpi-row, .rail:last-child, .feishu-hub, .payload-box { grid-template-columns: 1fr; }
+  .shell, .grid-2, .scenario-cards, .roadmap, .kpi-row, .rail:last-child, .feishu-hub, .payload-box, .final-lanes { grid-template-columns: 1fr; }
   .slider { grid-template-columns: 1fr 1fr 34px; }
 }
 @media (max-width: 560px) {

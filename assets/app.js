@@ -300,6 +300,22 @@ function renderList(id, items) {
   document.getElementById(id).innerHTML = items.map(item => `<article class="${item.level || ""}"><b>${item.title}</b><span>${item.body}</span>${item.tag ? `<em class="tag">${item.tag}</em>` : ""}</article>`).join("");
 }
 
+function renderFinalLanes(plan) {
+  const lanes = [
+    { priority: "主赛道", title: "产供销协同与跨装置负荷联动", body: "液氨、下游需求、价格、能源、负荷同屏判断，回答保谁、降谁、停谁、是否外采。" },
+    { priority: "第二赛道", title: "稳定生产波动吸收", body: `需求、能源、库存波动先看是否冲击主流程，当前目标负荷 ${plan.load}% 以平稳和安全为底线。` },
+    { priority: "第三优先级", title: "设备弱信号预警", body: state.health < 68 ? "关键机组健康偏低，给出黄灯提醒、检查项和通知对象。" : "设备趋势正常，保留弱信号监控和相似案例回放。" },
+    { priority: "支撑底座", title: "经验沉淀与新人快速成长", body: "把调度长判断、未采纳原因、事故复盘写入知识库，转成新人可学的场景样本。" }
+  ];
+  document.getElementById("finalLanes").innerHTML = lanes.map(item => `
+    <article>
+      <em>${item.priority}</em>
+      <b>${item.title}</b>
+      <span>${item.body}</span>
+    </article>
+  `).join("");
+}
+
 function renderScenarioCards(plan) {
   const compare = scenarios(plan);
   document.getElementById("bestPlan").textContent = `优选：${compare.best}`;
@@ -362,6 +378,7 @@ function render() {
   document.getElementById("constraintCount").textContent = `${constraints(plan).length}项`;
   document.getElementById("modelTrust").textContent = plan.confidence < 75 ? "仅规则提醒" : "可影子运行";
   document.getElementById("shiftSummary").textContent = `${text.mode}｜24h`;
+  renderFinalLanes(plan);
   renderScenarioCards(plan);
   renderList("interfaceMap", interfaceMap(plan));
   renderList("modelCards", models(plan));

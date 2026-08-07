@@ -16,11 +16,13 @@
 
 多维表格作为调度知识库的事实层，至少包含班次、场景、目标负荷、风险指数、预计收益、采纳状态、未采纳原因、执行偏差、班长备注和复盘结论。字段样例见 `data/feishu_dispatch_review_template.csv`。
 
-本轮已按样例创建飞书 Base 原型：`https://larkcommunity.feishu.cn/base/QzENbAkl1aYQGds8dBacqu6Inue`。
+本轮已按样例创建飞书 Base 原型：`https://www.feishu.cn/base/QzENbAkl1aYQGds8dBacqu6Inue`。
 
 ## 飞书任务
 
 每个被采纳方案自动生成一个跟踪任务，负责人包括调度员、班长和设备工程师。任务检查项包括确认 DCS historian 实际负荷、记录未采纳原因、班后复盘收益归因。
+
+决赛提交任务清单原型：`https://applink.feishu.cn/client/todo/task_list?guid=2ab6c357-dfeb-4f75-9aa3-781dc7ac7244`。企业试点时同一机制用于跟踪“采纳方案执行监督”“班后复盘补录”“周度规则校准”等任务。
 
 ## 事件回调
 

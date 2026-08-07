@@ -28,9 +28,11 @@ python -m http.server 4173
 
 ## 提交材料
 
-- 飞书在线稿：`https://larkcommunity.feishu.cn/docx/AYyad50itooOPxxZpQacgSqIn2c`
+- 飞书在线稿：`https://www.feishu.cn/docx/AYyad50itooOPxxZpQacgSqIn2c`
 
-- 飞书 Base 原型：`https://larkcommunity.feishu.cn/base/QzENbAkl1aYQGds8dBacqu6Inue`
+- 飞书 Base 原型：`https://www.feishu.cn/base/QzENbAkl1aYQGds8dBacqu6Inue`
+
+- 飞书任务清单：`https://applink.feishu.cn/client/todo/task_list?guid=2ab6c357-dfeb-4f75-9aa3-781dc7ac7244`
 
 - `提交材料/00_提交信息汇总.docx`
 - `提交材料/01_开题报告.docx`
@@ -39,6 +41,7 @@ python -m http.server 4173
 - `提交材料/04_参考文献与数据依据.docx`
 - `提交材料/05_方案创新与落地清单.docx`
 - `提交材料/06_决赛完整方案文档.docx`
+- `提交材料/07_飞书功能模块说明.docx`
 
 ## 飞书接入所需授权
 

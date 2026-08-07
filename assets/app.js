@@ -62,7 +62,7 @@ function strategy(plan) {
     return {
       mode: "保供补氨",
       title: "提高合成负荷补液氨库存，优先兑现尿素溶液与复合肥用氨",
-      text: `下游订单压力高且库存偏紧，目标负荷 ${plan.load}%，夜间补安全库存，白班优先保障高优订单。`
+      text: `下游订单压力高且库存偏紧，目标负荷 ${plan.load}%，按边际贡献和固定成本吸收排序液氨去向，白班优先保障高贡献订单。`
     };
   }
   if (state.energy > 80) {
@@ -81,7 +81,7 @@ function strategy(plan) {
 
 function scenarios(plan) {
   const steady = { id: "稳氨", load: clamp(plan.load - 2, 58, 90), risk: plan.risk - 4, margin: Number(plan.margin) - 0.4, body: "保持合成回路平稳，减少频繁升降负荷带来的能耗和设备扰动。" };
-  const supply = { id: "保供", load: clamp(plan.load + 5, 62, state.health < 62 ? 76 : 95), risk: plan.risk + 7, margin: Number(plan.margin) + 0.6, body: "优先保障尿素溶液、复合肥和联碱配套用氨，液氨外售降为弹性池。" };
+  const supply = { id: "保供", load: clamp(plan.load + 5, 62, state.health < 62 ? 76 : 95), risk: plan.risk + 7, margin: Number(plan.margin) + 0.6, body: "优先保障边际贡献更高、能吸收固定成本或承担战略订单的下游用氨，液氨外售降为弹性池。" };
   const protect = { id: "护机", load: clamp(plan.load - 9, 50, 82), risk: plan.risk - 12, margin: Number(plan.margin) - 1.1, body: "为压缩机、换热器、合成塔留出检查窗口，降低非计划停车风险。" };
   const list = [steady, supply, protect].map(item => ({
     ...item,
@@ -106,7 +106,7 @@ function interfaceMap(plan) {
   return [
     { title: "DCS historian", body: "读取负荷、温度、压力、流量、电耗、蒸汽和关键约束余量；不直接写控制参数。", tag: "5-15分钟聚合" },
     { title: "APC/MPC", body: `把班次目标负荷 ${plan.load}% 转为连续负荷建议、升降速率限制和约束余量说明。`, tag: "控制层只读对话" },
-    { title: "RTO", body: `以吨氨收益 ${plan.margin}%、能源窗口、库存占用和订单延期成本形成经济目标。`, tag: "经济优化" },
+    { title: "RTO", body: `以边际贡献 ${plan.margin}%、固定成本吸收、能源窗口、库存占用和订单延期成本形成经济目标。`, tag: "经济优化" },
     { title: "MES/ERP", body: "审批通过后写计划摘要、订单优先级、交接说明和复盘结果。", tag: "管理层闭环" }
   ];
 }
@@ -146,7 +146,9 @@ function schedule(plan) {
 function benefitTrace(plan) {
   return [
     { title: "原计划保留", body: "保留调度员原计划作为反事实基线，不把市场价格自然波动算作系统收益。", level: "good" },
-    { title: "采纳方案核算", body: `仅当方案被采纳并执行，才核算吨氨收益 ${plan.margin}%、能耗优化 ${plan.energyGain}% 和库存变化。`, level: "good" },
+    { title: "边际贡献核算", body: `先看是否覆盖变动成本，再看可吸收多少折旧、固定人工和公辅摊销；当前贡献 ${plan.margin}%。`, level: "good" },
+    { title: "采纳方案核算", body: `仅当方案被采纳并执行，才核算边际贡献、能耗优化 ${plan.energyGain}%、库存变化和停开成本差异。`, level: "good" },
+    { title: "售价低于完全成本", body: "若仍有正边际贡献、能带走固定成本或维持战略订单，可继续开；若占用稀缺液氨且贡献为负，则触发降负荷/停产评估。", level: "warn" },
     { title: "外部因素剔除", body: "检修、物流异常、订单临时取消和行情自然上涨单独标记，不进入系统收益。", level: "warn" }
   ];
 }

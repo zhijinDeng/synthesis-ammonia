@@ -1,4 +1,7 @@
 output/
+.playwright-cli/
+云图-身份证明/
+~$*.docx
 .DS_Store
 Thumbs.db
 __pycache__/

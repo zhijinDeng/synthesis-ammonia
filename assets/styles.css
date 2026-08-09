@@ -70,8 +70,14 @@ button {
   background: #eef6fb;
   cursor: pointer;
 }
-button:hover { border-color: var(--blue); }
-.scenario-tabs button { color: #0f2638; background: #e9f4ff; border-color: #b7d2e6; }
+button:hover { border-color: var(--blue); }
+
+button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible {
+  outline: 3px solid rgba(36,111,158,.28);
+  outline-offset: 2px;
+}
+
+.scenario-tabs button { color: #0f2638; background: #e9f4ff; border-color: #b7d2e6; }
 .shell {
   display: grid;
   grid-template-columns: minmax(280px, 330px) minmax(560px, 1fr) minmax(280px, 350px);
@@ -346,7 +352,54 @@ output { font-weight: 700; text-align: right; }
 .ai-prompts, .ai-actions, .feishu-links { display: flex; gap: 8px; flex-wrap: wrap; }
 .ai-prompts button, .ai-actions button { min-height: 34px; color: #eaf5fb; background: #173b55; border-color: #41677f; font-size: 12px; }
 .ai-prompts button.active { color: #10283b; background: #dceef8; border-color: #dceef8; }
-.ai-answer { min-height: 116px; margin: 12px 0; padding: 13px; color: #edf7fb; background: #0b1d2a; border: 1px solid #35556d; border-radius: 6px; font-size: 13px; line-height: 1.68; }
+.ai-answer { min-height: 116px; margin: 12px 0; padding: 13px; color: #edf7fb; background: #0b1d2a; border: 1px solid #35556d; border-radius: 6px; font-size: 13px; line-height: 1.68; }
+
+.ai-answer > strong { display: block; color: #fff; font-size: 15px; line-height: 1.55; }
+.ai-answer dl { display: grid; gap: 8px; margin: 12px 0 0; }
+.ai-answer dl div { display: grid; grid-template-columns: 58px 1fr; gap: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.12); }
+.ai-answer dt { color: #91c7e4; font-weight: 700; }
+.ai-answer dd { margin: 0; color: #dceaf2; }
+
+.market-gate { margin: 12px 16px; padding: 11px; background: #fff9eb; border: 1px solid #ead3a6; border-left: 4px solid var(--yellow); border-radius: 6px; }
+.market-gate.confirmed { background: #f1faf5; border-color: #b8ddca; border-left-color: var(--green); }
+.market-gate > div { display: grid; gap: 3px; }
+.market-gate b { color: var(--navy); font-size: 13px; }
+.market-gate span { color: var(--muted); font-size: 12px; line-height: 1.45; }
+.market-gate button { width: 100%; min-height: 34px; margin-top: 9px; background: #fff; font-size: 12px; font-weight: 700; }
+
+.digital-employee-head { display: grid; grid-template-columns: 56px minmax(0,1fr) auto; gap: 11px; align-items: center; padding: 16px 16px 0; }
+.digital-employee-head img { width: 56px; height: 56px; object-fit: cover; border: 1px solid #cbdce8; border-radius: 6px; }
+.digital-employee-head span, .digital-employee-head strong, .digital-employee-head small { display: block; }
+.digital-employee-head span { color: var(--muted); font-size: 12px; }
+.digital-employee-head strong { margin: 2px 0; color: var(--navy); font-size: 17px; }
+.digital-employee-head small { color: #718394; font-size: 12px; }
+.digital-employee-head > em { align-self: start; padding: 5px 8px; color: #176443; background: #e8f6ee; border: 1px solid #b9dfca; border-radius: 999px; font-size: 12px; font-style: normal; font-weight: 700; }
+
+.role-switch { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; padding: 12px 16px 0; }
+.role-switch button { min-height: 34px; padding: 0 7px; background: #f6f8fa; font-size: 12px; }
+.role-switch button.active { color: #fff; background: var(--navy); border-color: var(--navy); }
+
+.action-dialog { width: min(680px, calc(100vw - 28px)); padding: 0; color: var(--ink); background: #fff; border: 1px solid #cbd9e4; border-radius: 8px; box-shadow: 0 24px 70px rgba(9,28,43,.28); }
+.action-dialog::backdrop { background: rgba(7,21,31,.56); }
+.action-dialog form { margin: 0; }
+.action-dialog header { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 12px; align-items: start; padding: 17px 18px; border-bottom: 1px solid var(--line); }
+.action-dialog h2 { margin: 0; font-size: 19px; }
+.action-dialog header p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+.severity { display: grid; place-items: center; min-width: 42px; min-height: 30px; padding: 0 8px; color: #fff; background: var(--red); border-radius: 5px; font-size: 12px; font-weight: 800; }
+.icon-close { min-width: 34px; min-height: 34px; padding: 0; color: #617386; background: #fff; font-size: 23px; line-height: 1; }
+.dialog-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; padding: 16px 18px 0; }
+.dialog-grid span { padding: 10px; color: #34495a; background: #f5f8fa; border: 1px solid #dce5ec; border-radius: 5px; font-size: 12px; }
+.action-dialog section { padding: 15px 18px 0; }
+.action-dialog section h3 { margin: 0 0 8px; font-size: 14px; }
+.action-dialog ol { margin: 0; padding-left: 22px; color: #405567; font-size: 13px; line-height: 1.7; }
+.dialog-boundary { margin: 14px 18px 0; padding: 10px; color: #7b4d12; background: #fff8e9; border-left: 4px solid var(--yellow); font-size: 12px; line-height: 1.55; }
+.action-dialog footer { display: flex; justify-content: flex-end; gap: 8px; padding: 16px 18px 18px; }
+.action-dialog .primary { color: #fff; background: var(--blue); border-color: var(--blue); }
+.check-row, .field-row { display: flex; gap: 9px; margin: 14px 18px 0; color: #34495a; font-size: 13px; line-height: 1.55; }
+.check-row[hidden] { display: none; }
+.check-row input { width: 17px; height: 17px; margin-top: 2px; }
+.field-row { flex-direction: column; }
+.field-row textarea { width: 100%; resize: vertical; padding: 9px; border: 1px solid #cbd9e4; border-radius: 5px; font: inherit; }
 .ai-actions { justify-content: flex-end; }
 .feishu-hub {
   display: grid;
@@ -446,5 +499,15 @@ output { font-weight: 700; text-align: right; }
   .kpi-row article { min-height: 104px; padding: 12px; }
 
   .kpi-row strong { font-size: 24px; }
+
+  .digital-employee-head { grid-template-columns: 50px minmax(0,1fr); }
+  .digital-employee-head img { width: 50px; height: 50px; }
+  .digital-employee-head > em { grid-column: 1 / -1; justify-self: start; }
+  .role-switch { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .ai-answer dl div { grid-template-columns: 1fr; gap: 3px; }
+  .dialog-grid { grid-template-columns: 1fr; }
+  .action-dialog { width: 100%; max-width: none; margin: auto 0 0; border-radius: 8px 8px 0 0; }
+  .action-dialog footer { display: grid; grid-template-columns: 1fr 1fr; }
+  .action-dialog footer .primary { grid-column: 1 / -1; }
 
 }

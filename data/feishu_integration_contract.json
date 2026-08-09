@@ -3,8 +3,8 @@
   "delivery_status": "acceptance_demo",
   "status_legend": {
     "online_verified": ["bitable", "verification_task"],
-    "prototype": ["interactive_card", "approval", "event_callback", "feishu_ai"],
-    "platform_enablement_required": ["native_task_ai_agent"]
+    "prototype": ["interactive_card", "approval", "event_callback"],
+    "platform_enablement_required": ["aily", "native_task_ai_agent"]
   },
   "fact_contract": [
     "source_system",
@@ -12,6 +12,8 @@
     "ingested_at",
     "unit",
     "quality_code",
+    "market_confirmed_by",
+    "market_version",
     "owner",
     "lineage_id"
   ],
@@ -35,7 +37,7 @@
     "approval": {
       "definition_code": "ammonia_load_adjustment",
       "low_risk_path": ["班长确认"],
-      "high_risk_path": ["班长确认", "调度主管复核", "安环知会"]
+      "hard_trigger_path": ["班长确认", "设备专业或调度主管会签"]
     },
     "bitable": {
       "table_name": "合成氨调度复盘库",
@@ -44,9 +46,10 @@
         "proposal_id",
         "scenario",
         "target_load_percent",
-        "risk_index",
-        "confidence_percent",
-        "expected_contribution_cny_24h",
+        "evidence_completeness",
+        "baseline_plan_contribution_cny_24h",
+        "recommended_allocation_contribution_cny_24h",
+        "attributable_benefit_cny",
         "approval_path",
         "accepted",
         "reject_reason",
@@ -63,7 +66,7 @@
     },
     "event_callback": {
       "events": ["card.action.trigger", "approval.instance.status_changed", "bitable.record.changed"],
-      "guards": ["signature_verification", "replay_protection", "idempotent_write", "manual_downgrade_when_low_confidence"],
+      "guards": ["signature_verification", "replay_protection", "idempotent_write", "manual_downgrade_when_evidence_incomplete"],
       "failure_handling": ["bounded_retry", "dead_letter_queue", "manual_reconcile", "immutable_audit_log"]
     },
     "feishu_ai": {
@@ -78,6 +81,17 @@
     "event_priorities": ["P1", "P2", "P3"],
     "allocation_decisions": ["保", "稳", "降", "限", "停", "询价外采"],
     "execution_checks": ["班长确认", "MES目标负荷", "现场执行反馈", "班末效果复核"],
-    "stale_data_threshold_minutes": 15
+    "stale_data_threshold_minutes": 15,
+    "execution_feedback_rule": "historian_not_connected_means_pending_never_synthetic_actual"
+  },
+  "pilot_scope_30_days": {
+    "inputs": ["MES订单与班次记录离线导出", "ERP行情与成本日表", "Historian五至十五分钟摘要", "设备趋势导出"],
+    "writeback": ["MES班次计划摘要", "飞书交接摘要", "飞书复盘记录"],
+    "excluded": ["DCS控制参数", "SIS参数", "自动开停车", "未授权跨系统写入"]
+  },
+  "acceptance_90_days": {
+    "minimum_valid_shifts": 30,
+    "required_scenarios": ["产供销重排", "公辅波动吸收", "设备趋势复核"],
+    "gates": ["安全硬约束零突破", "建议可复算率100%", "未接Historian时实际值为空", "收益仅在同口径原计划对照后归因"]
   }
 }

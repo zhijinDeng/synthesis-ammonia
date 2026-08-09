@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>氨智领航调控师</title>
 
-    <meta name="description" content="面向合成氨产供销协同、稳产预警与班组执行闭环的影子调度工作台" />
+    <meta name="description" content="面向合成氨产供销协同、稳产预警与班组执行跟踪的调度验收工作台" />
 
     <link rel="icon" href="data:," />
     <link rel="stylesheet" href="assets/styles.css" />
@@ -15,19 +15,19 @@
       <div class="brand-block">
         <p class="eyebrow">Yuntu Ammonia Dispatch Expert</p>
         <h1>氨智领航调控师</h1>
-        <p class="subtitle">合成氨产供销全线联动、稳产预警与班组执行闭环</p>
+        <p class="subtitle">合成氨产供销联动、稳产提示与班组执行复盘</p>
       </div>
       <div class="shift-meta" aria-label="班次状态">
 
         <span><b id="shiftName">白班 D-01</b><small id="shiftClock">--:--:--</small></span>
 
-        <span><b>影子运行</b><small>不写 DCS / SIS</small></span>
+        <span><b>演练模式</b><small>不写 DCS / SIS</small></span>
 
-          <span><b id="headerDataState">样例字段可用</b><small>行情样例需核价</small></span>
+          <span><b id="headerDataState">样例字段可用</b><small id="headerMarketState">行情样例需核价</small></span>
 
       </div>
 
-      <div class="scenario-tabs" aria-label="验收场景">
+      <div class="scenario-tabs" aria-label="场景回放">
         <button data-preset="steady" type="button">稳氨</button>
         <button data-preset="supply" type="button">保供</button>
         <button data-preset="protect" type="button">护机</button>
@@ -43,7 +43,7 @@
 
       <button data-workspace="stability" type="button">稳产预警</button>
 
-      <button data-workspace="execution" type="button">执行闭环</button>
+      <button data-workspace="execution" type="button">执行复盘</button>
 
       <button data-workspace="system" type="button">依据与接入</button>
 
@@ -62,7 +62,12 @@
           <label class="slider"><span>低碳能源可用</span><input data-key="green" type="range" min="0" max="100" value="34" /><output id="greenOut">34</output></label>
           <label class="slider"><span>液氨市场价（元/吨）</span><input data-key="ammoniaPrice" type="range" min="1700" max="2800" step="10" value="2180" /><output id="ammoniaPriceOut">2180</output></label>
           <label class="slider"><span>硝酸行情趋势（%）</span><input data-key="nitricTrend" type="range" min="-20" max="20" value="-6" /><output id="nitricTrendOut">-6</output></label>
-          <label class="slider"><span>压机弱信号强度</span><input data-key="compressorDrift" type="range" min="0" max="100" value="18" /><output id="compressorDriftOut">18</output></label>
+        <label class="slider"><span>压机趋势证据强度</span><input data-key="compressorDrift" type="range" min="0" max="100" value="18" /><output id="compressorDriftOut">18</output></label>
+
+        <div class="market-gate" id="marketGate">
+          <div><b>经营行情闸门</b><span id="marketGateStatus">待运营核价，沿用上一有效版本</span></div>
+          <button id="confirmMarket" type="button">确认本轮样例行情</button>
+        </div>
           <p class="data-caption">仅用于决赛场景回放，不代表现场设定值。试点时本区改为 ERP、MES、IoT、DCS historian 与设备软件只读事实。</p>
         </section>
 
@@ -83,7 +88,7 @@
           <ul class="compact-list">
             <li>不直接写DCS/SIS控制参数</li>
             <li>不自动开停车，不绕过审批链</li>
-            <li>先影子运行，再低风险小闭环</li>
+            <li>先旁路回放，再做低风险执行验证</li>
             <li>数据低可信时降级人工流程</li>
           </ul>
         </section>
@@ -95,7 +100,7 @@
           <span><i class="pulse good"></i>DCS摘要样例延迟 45秒</span>
           <span><i class="pulse good"></i>热电APC样例延迟 2分钟</span>
           <span><i class="pulse good"></i>MES样例延迟 4分钟</span>
-          <span><i class="pulse warn"></i>行情样例延迟 23分钟 · 不参与自动建议</span>
+          <span id="marketSourceState"><i class="pulse warn"></i>行情样例待核价 · 新输入不参与建议</span>
           <strong id="dataCompleteness">数据完整度 97.4%</strong>
         </section>
         <section class="hero-panel" data-view="overview supply stability">
@@ -121,8 +126,8 @@
         <section class="kpi-row" data-view="overview supply stability">
           <article><span>目标负荷</span><strong id="loadKpi">86%</strong><small>合成回路建议</small></article>
           <article><span>未来24小时预计产氨</span><strong id="nh3Kpi">1,677t</strong><small>验收样例推算值</small></article>
-          <article><span>24小时增量贡献</span><strong id="marginKpi">+72.4万</strong><small>可按明细复算</small></article>
-          <article><span>当前风险</span><strong id="riskKpi">可控 32</strong><small>0-100约束触发评分</small></article>
+        <article><span>24小时分配贡献</span><strong id="marginKpi">+72.4万</strong><small>相对液氨外售基准</small></article>
+        <article><span>约束状态</span><strong id="riskKpi">0项越界</strong><small id="riskKpiNote">2项待复核</small></article>
         </section>
 
         <section class="panel" data-view="overview supply">
@@ -144,11 +149,11 @@
 
         <section class="panel" data-view="overview stability">
 
-          <div class="panel-title"><span>压缩机弱信号证据</span><strong id="weakSignalState">持续观察</strong></div>
+          <div class="panel-title"><span>压缩机趋势证据样例</span><strong id="weakSignalState">持续观察</strong></div>
 
           <div id="weakSignalEvidence" class="signal-grid"></div>
 
-          <p class="data-caption">本区是 AI 提示，不是 DCS 报警。只有异常状态且需要操作员及时响应的通知才能按报警管理；处置仍按现场规程和设备专业确认。</p>
+          <p class="data-caption">本区是一般趋势提示，不是 DCS 报警。只有异常状态且需要操作员及时响应的通知才能按报警管理；处置仍按现场规程和设备专业确认。</p>
 
         </section>
 
@@ -163,7 +168,7 @@
 
           </div>
 
-          <p class="data-caption">验收样例采用“产品净收入－非氨变动成本－包装物流－液氨机会成本－启停摊销＋违约避免额”的增量口径；正式试点由财务与运营共同固化，不重复计算固定成本吸收。</p>
+          <p class="data-caption">验收样例采用“相对液氨净外售价值的分配贡献”口径；它用于比较液氨去向，不等同于平台创造的收益。系统收益须与同一输入快照下的人工原计划比较，并在执行后核算。</p>
         </section>
 
         <section class="panel">
@@ -219,7 +224,7 @@
 
         <section class="grid-2">
           <section class="panel">
-            <div class="panel-title"><span>飞书班组闭环</span><strong id="feishuStatus">本地预览</strong></div>
+            <div class="panel-title"><span>飞书班组协同</span><strong id="feishuStatus">本地预览</strong></div>
             <div id="feishuPreview" class="feishu-preview"></div>
           </section>
           <section class="panel">
@@ -229,14 +234,18 @@
         </section>
 
         <section class="panel">
-          <div class="panel-title"><span>飞书 AI 调度助手</span><strong id="feishuLiveState">有依据地回答，有边界地执行</strong></div>
+          <div class="digital-employee-head">
+            <img src="assets/digital-shift-dispatcher.webp" alt="数字调度长形象设定图" width="56" height="56" />
+            <div><span>数字调度长</span><strong>氨智调控师</strong><small id="digitalEmployeeMeta">只读建议层 · 最近核算 --:--</small></div>
+            <em id="feishuLiveState">值守中</em>
+          </div>
           <div class="ai-console">
             <div class="ai-prompts" aria-label="常用追问">
               <button data-question="nitric" type="button">为什么不建议硝酸满负荷？</button>
               <button data-question="allocation" type="button">液氨涨价后该保谁？</button>
-              <button data-question="compressor" type="button">压机弱信号继续恶化怎么办？</button>
+              <button data-question="compressor" type="button">压机趋势继续恶化怎么办？</button>
             </div>
-            <div id="aiAnswer" class="ai-answer" aria-live="polite"></div>
+            <div id="aiAnswer" class="ai-answer" aria-live="polite"></div>
             <div class="ai-actions">
               <button data-ai-action="card" type="button">生成班组卡片</button>
               <button data-ai-action="task" type="button">转执行任务</button>
@@ -255,7 +264,14 @@
 
       <aside class="rail">
         <section class="panel">
-          <div class="panel-title"><span>岗位视图</span><strong>同屏协同</strong></div>
+          <div class="panel-title"><span>岗位视图</span><strong>同一事实快照</strong></div>
+
+          <div class="role-switch" role="tablist" aria-label="岗位切换">
+            <button class="active" data-role="dispatcher" role="tab" aria-selected="true" type="button">调度员</button>
+            <button data-role="leader" role="tab" aria-selected="false" type="button">班长</button>
+            <button data-role="equipment" role="tab" aria-selected="false" type="button">设备</button>
+            <button data-role="hse" role="tab" aria-selected="false" type="button">安环</button>
+          </div>
           <div id="roleViews" class="stack"></div>
         </section>
 
@@ -276,6 +292,27 @@
       </aside>
     </main>
 
-    <script src="assets/app.js"></script>
+    <dialog id="incidentDialog" class="action-dialog" aria-labelledby="incidentTitle">
+      <form method="dialog">
+        <header><span id="incidentLevel" class="severity">P1</span><div><h2 id="incidentTitle">事件处置</h2><p id="incidentSource"></p></div><button class="icon-close" value="cancel" aria-label="关闭">×</button></header>
+        <div id="incidentFacts" class="dialog-grid"></div>
+        <section><h3>现场检查</h3><ol id="incidentChecklist"></ol></section>
+        <p class="dialog-boundary">这里只记录确认、转派和复核，不向 DCS/SIS 下发控制动作。</p>
+        <footer><button value="cancel">返回</button><button type="button" data-incident-command="evidence">依据不足</button><button type="button" data-incident-command="ack">确认收到</button><button class="primary" type="button" data-incident-command="task">生成飞书任务草稿</button></footer>
+      </form>
+    </dialog>
+
+    <dialog id="approvalDialog" class="action-dialog" aria-labelledby="approvalTitle">
+      <form method="dialog">
+        <header><span class="severity">会签</span><div><h2 id="approvalTitle">记录方案确认</h2><p id="approvalReason"></p></div><button class="icon-close" value="cancel" aria-label="关闭">×</button></header>
+        <label class="check-row"><input id="leaderSign" type="checkbox" />班长已核对目标负荷、有效期和回滚条件</label>
+        <label class="check-row" id="specialistSignRow"><input id="specialistSign" type="checkbox" />设备专业或调度主管已核对硬触发项</label>
+        <label class="field-row">确认意见<textarea id="approvalNote" rows="3" placeholder="填写采纳依据、保留意见或附加条件"></textarea></label>
+        <p class="dialog-boundary">确认只改变演练状态并生成审计记录，不代表企业真实审批。</p>
+        <footer><button value="cancel">返回</button><button class="primary" id="submitApproval" type="button">记录确认</button></footer>
+      </form>
+    </dialog>
+
+    <script src="assets/app.js"></script>
   </body>
 </html>

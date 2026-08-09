@@ -21,9 +21,37 @@ const uiState = {
 
   generatedAt: new Date(),
 
-  actualLoad: null
+  actualLoad: null,
+
+  role: "dispatcher",
+
+  marketConfirmed: false,
+
+  confirmedMarket: { ammoniaPrice: 2180, nitricTrend: -6, version: 1, confirmedAt: new Date() },
+
+  incidentStatus: {},
+
+  activeIncident: null
 
 };
+
+function activeMarket() {
+  return uiState.confirmedMarket;
+}
+
+function hardTrigger() {
+  if (state.compressorDrift > 60) return "压缩机趋势证据触发设备专业复核";
+  if (state.health < 62) return "关键设备健康触发护机复核";
+  return "";
+}
+
+function requiresSpecialist(plan) {
+  return Boolean(hardTrigger()) || plan.risk >= 55;
+}
+
+function evidenceCompleteness() {
+  return uiState.marketConfirmed ? 8 : 7;
+}
 
 const workflowLabels = {
 
@@ -58,7 +86,9 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
-function calc() {
+function calc() {
+
+  const market = activeMarket();
   const weakSignalPenalty = state.compressorDrift > 60 ? 8 : state.compressorDrift > 35 ? 3 : 0;
   const loadUpper = state.health < 62 || state.compressorDrift > 70 ? 76 : 94;
   const load = clamp(
@@ -70,7 +100,7 @@ function calc() {
   const order = clamp(62 + state.demand * 0.28 + load * 0.16 - risk * 0.08, 50, 98);
   const energyGain = clamp(2 + (100 - state.energy) * 0.04 + state.green * 0.08 + Math.max(0, 86 - load) * 0.04, 1, 14);
   const stock = clamp(state.inventory + load * 0.14 - state.demand * 0.09, 24, 96);
-  const priceLift = (state.ammoniaPrice - 2000) / 180;
+  const priceLift = (market.ammoniaPrice - 2000) / 180;
   const margin = clamp(1.0 + order * 0.06 + priceLift + energyGain * 0.24 - state.energy * 0.035 - risk * 0.02, -4, 15);
   const confidence = clamp(94 - risk * 0.23 + state.health * 0.05, 66, 95);
   return {
@@ -85,12 +115,14 @@ function calc() {
   };
 }
 
-function strategy(plan) {
+function strategy(plan) {
+
+  const market = activeMarket();
   if (state.health < 62 || state.compressorDrift > 60) {
     return {
       mode: "护机稳产",
       title: "压缩负荷上限，优先保护循环压缩机与合成塔温升边界",
-      text: `设备健康 ${state.health}、压机弱信号 ${state.compressorDrift}，建议合成回路控制在 ${plan.load}% 左右，先复核振动、轴位移和喘振裕度，再决定是否继续降负荷。`
+      text: `设备健康 ${state.health}、压机趋势证据 ${state.compressorDrift}，建议合成回路控制在 ${plan.load}% 左右，先复核振动、轴位移和喘振裕度，再决定是否继续降负荷。`
     };
   }
   if (state.demand > 86 && state.inventory < 55) {
@@ -104,13 +136,13 @@ function strategy(plan) {
     return {
       mode: "能源错峰",
       title: "避开高价蒸汽/电力窗口，用低价时段补回安全库存",
-      text: `能源成本处于高位，建议高价窗口压低边际产量，低价窗口补回液氨安全库存，保持下游刚性交付。`
+      text: `能源成本处于高位，建议高价窗口压低边际产量，低价窗口补回液氨安全库存，保持下游刚性交付。`
     };
   }
   return {
     mode: "稳氨优化",
     title: "稳定合成回路负荷，平衡液氨库存与下游消纳",
-    text: `液氨行情 ${state.ammoniaPrice} 元/吨、硝酸趋势 ${state.nitricTrend}%；建议目标负荷 ${plan.load}%，重点跟踪下游贡献排序、氢氮比、床层温升和压机趋势。`
+    text: `${uiState.marketConfirmed ? "本轮运营样例已确认" : "沿用上一有效行情"} V${market.version}：液氨 ${market.ammoniaPrice} 元/吨、硝酸趋势 ${market.nitricTrend}%；建议目标负荷 ${plan.load}%，重点跟踪下游分配、氢氮比、床层温升和压机趋势。`
   };
 }
 
@@ -130,10 +162,10 @@ function scenarios(plan) {
 function constraints(plan) {
   return [
     { title: "合成塔床层温升", body: state.health < 62 ? "设备健康下降，温升和热点偏差需要班长复核。" : "未触发硬约束，继续监控温升趋势。", level: state.health < 62 ? "danger" : "good" },
-    { title: "循环压缩机健康", body: state.health < 68 || state.compressorDrift > 35 ? `健康 ${state.health}、弱信号 ${state.compressorDrift}；限制升负荷速率并插入点检窗口。` : "压缩机余量可支撑当前目标负荷。", level: state.health < 68 || state.compressorDrift > 35 ? "warn" : "good" },
+    { title: "循环压缩机趋势", body: state.health < 68 || state.compressorDrift > 35 ? `健康 ${state.health}、趋势证据 ${state.compressorDrift}；限制升负荷速率并插入点检窗口。` : "验收样例未触发复核线；现场结论仍以设备系统和人员确认为准。", level: state.health < 68 || state.compressorDrift > 35 ? "warn" : "good" },
     { title: "液氨库存", body: state.inventory < 48 ? "库存偏紧，冻结弹性外售并优先补安全库存。" : "库存支持下游消纳和短时错峰。", level: state.inventory < 48 ? "warn" : "good" },
     { title: "能源窗口", body: state.energy > 80 ? "高价窗口触发错峰策略，需核对蒸汽和电力口径。" : "能源成本允许维持经济负荷。", level: state.energy > 80 ? "warn" : "good" },
-      { title: "模型可信度", body: plan.confidence < 75 ? "仅输出备选方案，不回写MES计划。" : "满足验收样例记录要求；企业阈值仍需历史班次校准。", level: plan.confidence < 75 ? "danger" : "good" }
+    { title: "证据完整度", body: `${evidenceCompleteness()}/8 项验收字段可用。${uiState.marketConfirmed ? "行情已由运营样例确认。" : "行情待运营核价，计算沿用上一有效版本。"}`, level: uiState.marketConfirmed ? "good" : "warn" }
   ];
 }
 
@@ -141,7 +173,7 @@ function interfaceMap(plan) {
   return [
     { title: "DCS historian", body: "读取负荷、温度、压力、流量、电耗、蒸汽和关键约束余量；不直接写控制参数。", tag: "5-15分钟聚合" },
     { title: "APC/MPC", body: `把班次目标负荷 ${plan.load}% 转为连续负荷建议、升降速率限制和约束余量说明。`, tag: "控制层只读对话" },
-    { title: "RTO", body: `以边际贡献 ${plan.margin}%、固定成本吸收、能源窗口、库存占用和订单延期成本形成经济目标。`, tag: "经济优化" },
+    { title: "RTO", body: "以液氨外售为机会成本基准，叠加固定成本吸收、能源窗口、库存占用和订单延期成本形成经济目标。", tag: "经济优化" },
     { title: "MES/ERP", body: "审批通过后写计划摘要、订单优先级、交接说明和复盘结果。", tag: "管理层闭环" }
   ];
 }
@@ -150,8 +182,8 @@ function models(plan) {
   return [
     { title: "机理边界", body: "氢氮比、合成塔温升、循环气量、罐区压力和最低稳定负荷作为硬约束。", tag: "先守边界" },
     { title: "反应器候选校准", body: "PINN仅作为候选方法；须用企业历史工况、热力学守恒和留出班次验证后，才能参与影子计算。", tag: "尚未企业校准" },
-    { title: "设备弱信号预测", body: state.health < 68 || state.compressorDrift > 35 ? "多变量趋势偏离，护机方案优先级上升；先检查再决策。" : "设备状态支持当前影子运行。", tag: `健康 ${state.health} / 弱信号 ${state.compressorDrift}` },
-    { title: "漂移与回滚", body: plan.confidence < 75 ? "置信度偏低，自动降级为规则提醒。" : "置信度满足影子运行记录要求。", tag: `置信度 ${plan.confidence}%` }
+    { title: "设备趋势证据样例", body: state.health < 68 || state.compressorDrift > 35 ? "多变量趋势出现同向偏离，护机方案优先级上升；先检查、再判断、后调整。" : "样例趋势未触发复核线，待企业历史数据验证。", tag: `健康 ${state.health} / 趋势证据 ${state.compressorDrift}` },
+    { title: "漂移与回滚", body: "数据超时、字段缺失、执行偏差或现场拒绝时，建议自动失效并回到人工调度。", tag: `证据完整度 ${evidenceCompleteness()}/8` }
   ];
 }
 
@@ -182,25 +214,27 @@ function benefitTrace(plan) {
 
   const contributionWan = massBalance(plan).contributionWan;
   return [
-    { title: "原计划保留", body: "保留调度员原计划作为反事实基线，不把市场价格自然波动算作系统收益。", level: "good" },
-    { title: "增量贡献核算", body: `按产品净收入、非氨变动成本、物流、液氨机会成本和启停摊销逐项复算；当前验收样例为 ${contributionWan.toFixed(1)} 万元/24h。`, level: "good" },
-    { title: "采纳方案核算", body: `仅当方案被采纳并执行，才核算边际贡献、能耗优化 ${plan.energyGain}%、库存变化和停开成本差异。`, level: "good" },
+    { title: "原计划贡献", body: "待企业导入调度员原计划，作为同一行情、同一订单、同一设备边界下的对照基线。", level: "warn" },
+    { title: "本方案分配贡献", body: `按产品净收入、非氨变动成本、物流、液氨外售机会成本和启停摊销逐项复算；当前验收样例为 ${contributionWan.toFixed(1)} 万元/24h，比较基准为液氨净外售。`, level: "good" },
+    { title: "可归因收益", body: `待方案被采纳、Historian 回传并完成班末复盘后，再与原计划比较；当前数值不是平台创效。能耗变化 ${plan.energyGain}% 仅为演练指标。`, level: "warn" },
     { title: "售价低于完全成本", body: "若仍有正边际贡献、能带走固定成本或维持战略订单，可继续开；若占用稀缺液氨且贡献为负，则触发降负荷/停产评估。", level: "warn" },
     { title: "外部因素剔除", body: "检修、物流异常、订单临时取消和行情自然上涨单独标记，不进入系统收益。", level: "warn" }
   ];
 }
 
 function allocationRows(plan) {
-  const scarce = state.inventory < 50 || state.demand > 86;
-  const externalMargin = Math.round(state.ammoniaPrice - 1940 - state.energy * 1.3);
-  const nitricMargin = Math.round(180 + state.nitricTrend * 18 - state.energy * 0.8);
+  const scarce = state.inventory < 50 || state.demand > 86;
+
+  const market = activeMarket();
+  const externalMargin = 0;
+  const nitricMargin = Math.round(180 + market.nitricTrend * 18 - state.energy * 0.8);
   const rows = [
     { name: "复合肥刚性订单", demand: `${Math.round(72 + state.demand * 0.22)}%`, margin: Math.round(420 + state.demand * 1.3), restart: "连续消纳 / 客户交期", action: "保", why: "订单与产业链协同" },
     { name: "尿素溶液", demand: `${Math.round(68 + state.demand * 0.18)}%`, margin: Math.round(330 + state.demand), restart: "稳定消纳 / 降负荷受限", action: "保", why: "稳定主流程" },
     { name: "纯碱配套", demand: `${Math.round(60 + state.demand * 0.16)}%`, margin: Math.round(255 + state.demand * 0.7), restart: "联碱联动 / 6-10h", action: scarce ? "稳" : "保", why: "跨装置平衡" },
-    { name: "硝酸", demand: `${Math.round(64 + state.nitricTrend)}%`, margin: nitricMargin, restart: "降负荷优先 / 4-8h", action: nitricMargin < 80 ? "降" : "稳", why: state.nitricTrend < 0 ? "行情走弱" : "边际贡献尚可" },
-    { name: "液氨外售", demand: `${state.ammoniaPrice}元/t`, margin: externalMargin, restart: "弹性池 / 无启停", action: scarce ? "限" : externalMargin > 160 ? "保" : "降", why: "机会成本比较" },
-    { name: "外采液氨", demand: `${state.ammoniaPrice + 80}元/t`, margin: -Math.round(80 + state.energy * 0.3), restart: "物流与到货风险", action: state.inventory < 38 && state.demand > 88 ? "询价" : "不采", why: "仅保刚性订单" }
+    { name: "硝酸", demand: `${Math.round(64 + market.nitricTrend)}%`, margin: nitricMargin, restart: "降负荷优先 / 4-8h", action: nitricMargin < 80 ? "降" : "稳", why: market.nitricTrend < 0 ? "行情走弱" : "分配贡献尚可" },
+    { name: "液氨外售", demand: `${market.ammoniaPrice}元/t`, margin: externalMargin, restart: "弹性池 / 无启停", action: scarce ? "限" : "保", why: "分配比较基准" },
+    { name: "外采液氨", demand: `${market.ammoniaPrice + 80}元/t`, margin: -(market.ammoniaPrice + 80), restart: "物流与到货风险", action: state.inventory < 38 && state.demand > 88 ? "询价" : "不采", why: "补缺采购成本，不参与去向收益排名" }
   ];
   return rows.sort((a, b) => b.margin - a.margin);
 }
@@ -209,72 +243,76 @@ function enterpriseAllocationRows(plan) {
 
   const scarce = state.inventory < 50 || state.demand > 86;
 
+  const market = activeMarket();
+
+  const opportunityCost = market.ammoniaPrice - 45;
+
   const rows = [
 
     {
       name: "复合肥刚性订单",
       demand: `${Math.round(72 + state.demand * 0.22)}%`,
       tons: Math.round(430 + state.demand * 1.2),
-      margin: Math.round(3200 + state.demand * 2 - 400 - 90 - state.ammoniaPrice - 160),
+      margin: Math.round(3200 + state.demand * 2 - 400 - 90 - opportunityCost - 160),
       restart: "连续消纳 / 客户交期",
       action: "保",
       why: "先保刚性订单与违约风险",
-      ledger: [3200 + state.demand * 2, -400, -90, -state.ammoniaPrice, -160, 0]
+      ledger: [3200 + state.demand * 2, -400, -90, -opportunityCost, -160, 0]
     },
 
     {
       name: "尿素溶液",
       demand: `${Math.round(68 + state.demand * 0.18)}%`,
       tons: Math.round(570 + state.demand * 1.4),
-      margin: Math.round(3000 + state.demand - 360 - 70 - state.ammoniaPrice - 60),
+      margin: Math.round(3000 + state.demand - 360 - 70 - opportunityCost - 60),
       restart: "稳定消纳 / 降负荷受限",
       action: "保",
       why: "维持主流程连续和稳定消纳",
-      ledger: [3000 + state.demand, -360, -70, -state.ammoniaPrice, -60, 0]
+      ledger: [3000 + state.demand, -360, -70, -opportunityCost, -60, 0]
     },
 
     {
       name: "纯碱配套",
       demand: `${Math.round(60 + state.demand * 0.16)}%`,
       tons: Math.round(360 + state.demand * 0.8),
-      margin: Math.round(2840 + state.demand * 0.7 - 300 - 55 - state.ammoniaPrice - 50),
+      margin: Math.round(2840 + state.demand * 0.7 - 300 - 55 - opportunityCost - 50),
       restart: "联碱联动 / 6-10h",
       action: scarce ? "稳" : "保",
       why: "兼顾跨装置连续与库存边界",
-      ledger: [2840 + state.demand * 0.7, -300, -55, -state.ammoniaPrice, -50, 0]
+      ledger: [2840 + state.demand * 0.7, -300, -55, -opportunityCost, -50, 0]
     },
 
     {
       name: "硝酸",
-      demand: `${Math.round(64 + state.nitricTrend)}%`,
-      tons: Math.max(180, Math.round(330 + state.nitricTrend * 3)),
-      margin: Math.round(2750 + state.nitricTrend * 18 - 310 - 45 - state.ammoniaPrice - 86),
+      demand: `${Math.round(64 + market.nitricTrend)}%`,
+      tons: Math.max(180, Math.round(330 + market.nitricTrend * 3)),
+      margin: Math.round(2750 + market.nitricTrend * 18 - 310 - 45 - opportunityCost - 86),
       restart: "降负荷优先 / 4-8h",
-      action: state.nitricTrend < 0 ? "降" : "稳",
-      why: state.nitricTrend < 0 ? "行情走弱，释放液氨给高贡献去向" : "边际贡献仍为正",
-      ledger: [2750 + state.nitricTrend * 18, -310, -45, -state.ammoniaPrice, -86, 0]
+      action: market.nitricTrend < 0 ? "降" : "稳",
+      why: market.nitricTrend < 0 ? "行情走弱，释放液氨给高贡献去向" : "分配贡献仍为正",
+      ledger: [2750 + market.nitricTrend * 18, -310, -45, -opportunityCost, -86, 0]
     },
 
     {
       name: "液氨外售",
-      demand: `${state.ammoniaPrice}元/t`,
-      tons: scarce ? 60 : Math.round(140 + (state.ammoniaPrice - 2000) * 0.25),
-      margin: Math.round(state.ammoniaPrice - 45 - (1940 + state.energy * 0.6)),
+      demand: `${market.ammoniaPrice}元/t`,
+      tons: scarce ? 60 : Math.round(140 + (market.ammoniaPrice - 2000) * 0.25),
+      margin: 0,
       restart: "弹性池 / 无启停",
       action: scarce ? "限" : "保",
       why: "作为跨产品机会成本基准",
-      ledger: [state.ammoniaPrice, -Math.round(1940 + state.energy * 0.6), -45, 0, 0, 0]
+      ledger: [market.ammoniaPrice, 0, -45, -opportunityCost, 0, 0]
     },
 
     {
       name: "外采液氨",
-      demand: `${state.ammoniaPrice + 80}元/t`,
+      demand: `${market.ammoniaPrice + 80}元/t`,
       tons: state.inventory < 38 && state.demand > 88 ? 180 : 0,
-      margin: -Math.round(80 + state.energy * 0.3),
+      margin: -(market.ammoniaPrice + 80),
       restart: "物流与到货风险",
       action: state.inventory < 38 && state.demand > 88 ? "询价" : "不采",
       why: "仅用于覆盖刚性订单缺口",
-      ledger: [0, -(state.ammoniaPrice + 80), 0, 0, 0, 0]
+      ledger: [0, -(market.ammoniaPrice + 80), 0, 0, 0, 0]
     }
 
   ];
@@ -314,27 +352,27 @@ function massBalance(plan) {
 function eventQueue(plan) {
   const events = [];
   if (state.inventory < 52 || state.demand > 86) {
-    events.push({ level: "p1", source: "MES / 罐区", title: "液氨可分配量趋紧", body: `库存 ${state.inventory}%、订单压力 ${state.demand}；需在复合肥、尿素溶液、纯碱、硝酸和外售间重排。`, impact: "影响未来8小时", owner: "调度长", action: "打开分配表" });
+    events.push({ id: "allocation-gap", level: "p1", source: "MES / 罐区", title: "液氨可分配量趋紧", body: `库存 ${state.inventory}%、订单压力 ${state.demand}；需在复合肥、尿素溶液、纯碱、硝酸和外售间重排。`, impact: "影响未来8小时", deadline: "30分钟内", owner: "调度长", action: "处置", facts: [`库存水位 ${state.inventory}%`, `订单压力 ${state.demand}`, `行情版本 V${activeMarket().version}`], checklist: ["核对罐区可用量与不可用底量", "核对刚性订单、在途与违约影响", "确认硝酸、外售等弹性去向"] });
   } else {
-    events.push({ level: "p2", source: "ERP / MES", title: "下游消纳结构可优化", body: `液氨库存 ${state.inventory}%，可按单位液氨贡献微调去向，不改变主流程节奏。`, impact: `样例贡献 ${massBalance(plan).contributionWan.toFixed(1)}万元/24h`, owner: "生产调度", action: "核对订单" });
+    events.push({ id: "allocation-review", level: "p2", source: "ERP / MES", title: "下游消纳结构可复核", body: `液氨库存 ${state.inventory}%，可按单位液氨分配贡献微调去向，不改变主流程节奏。`, impact: `样例分配贡献 ${massBalance(plan).contributionWan.toFixed(1)}万元/24h`, deadline: "本班内", owner: "生产调度", action: "处置", facts: [`库存水位 ${state.inventory}%`, `证据完整度 ${evidenceCompleteness()}/8`, "原计划基线待导入"], checklist: ["核对订单交期与最低接收量", "核对液氨外售净值口径", "保留调度员原计划作为对照"] });
   }
   if (state.compressorDrift > 35 || state.health < 68) {
-    events.push({ level: "p1", source: "SMC / 机组", title: "循环压缩机弱信号抬升", body: `弱信号 ${state.compressorDrift}、健康 ${state.health}；先查振动、轴位移、入口条件和喘振裕度。`, impact: "可能触发护机降负荷", owner: "设备工程师", action: "发起复核" });
+    events.push({ id: "compressor-trend", level: "p1", source: "SMC / 机组", title: "循环压缩机趋势需复核", body: `趋势证据 ${state.compressorDrift}、健康 ${state.health}；先查振动、轴位移、入口条件和喘振裕度。`, impact: "可能限制升负荷或转护机方案", deadline: state.compressorDrift > 60 ? "10分钟内" : "30分钟内", owner: "设备工程师", action: "处置", facts: [`趋势证据 ${state.compressorDrift}`, `设备健康 ${state.health}`, hardTrigger() || "未触发强制会签线"], checklist: ["调取原始趋势并排除测点故障", "核对振动、轴位移和止推温度", "核对入口温压与防喘振裕度", "设备专业给出处置意见"] });
   } else {
-    events.push({ level: "p3", source: "SMC / 机组", title: "关键机组趋势稳定", body: `弱信号 ${state.compressorDrift}，未越黄灯阈值；继续观察多变量同向漂移。`, impact: "无即时负荷限制", owner: "设备值班", action: "继续监视" });
+    events.push({ id: "compressor-watch", level: "p3", source: "SMC / 机组", title: "关键机组趋势观察", body: `趋势证据 ${state.compressorDrift}，验收样例未越关注线；继续观察多变量是否同向漂移。`, impact: "不形成即时负荷限制", deadline: "下轮重算", owner: "设备值班", action: "查看", facts: [`趋势证据 ${state.compressorDrift}`, "待接企业 SMC/DCS 历史趋势", "当前为验收样例"], checklist: ["确认测点在线", "记录下一观察时间", "出现同向漂移时转设备复核"] });
   }
-  events.push({ level: state.energy > 80 ? "p1" : "p2", source: "热电 APC", title: state.energy > 80 ? "高价能源窗口临近" : "公辅供给处于可调区", body: state.energy > 80 ? "建议压低边际产量，低价窗口补回库存，避免频繁升降负荷。" : "蒸汽、电力和循环水余量支持当前方案。", impact: state.energy > 80 ? "未来4小时成本上升" : `节能空间 ${plan.energyGain}%`, owner: "公辅调度", action: "核对能源窗口" });
+  events.push({ id: "utility-window", level: state.energy > 80 ? "p1" : "p2", source: "热电 APC", title: state.energy > 80 ? "高价能源窗口临近" : "公辅供给处于可调区", body: state.energy > 80 ? "建议压低边际产量，低价窗口补回库存，避免频繁升降负荷。" : "蒸汽、电力和循环水余量支持当前方案。", impact: state.energy > 80 ? "未来4小时成本上升" : `演练节能指标 ${plan.energyGain}%`, deadline: state.energy > 80 ? "30分钟内" : "本班内", owner: "公辅调度", action: "处置", facts: [`能源指数 ${state.energy}`, `低碳能源可用 ${state.green}`, "待接热电 APC 约束摘要"], checklist: ["核对蒸汽母管和电力窗口", "确认下游不可中断负荷", "比较错峰与启停损失"] });
   return events.sort((a, b) => a.level.localeCompare(b.level));
 }
 
 function renderEventQueue(plan) {
   const items = eventQueue(plan);
   document.getElementById("eventQueueCount").textContent = `${items.filter(item => item.level !== "p3").length}项待处置`;
-  document.getElementById("eventQueue").innerHTML = items.map(item => `
+  document.getElementById("eventQueue").innerHTML = items.map((item, index) => `
     <article class="${item.level}">
-      <div><em>${item.level.toUpperCase()}</em><span>${item.source}</span></div>
+      <div><em>${item.level.toUpperCase()}</em><span>${item.source} · ${uiState.incidentStatus[item.id] || "待确认"}</span></div>
       <b>${item.title}</b><p>${item.body}</p>
-      <footer><span>${item.impact}</span><span>责任：${item.owner}</span><button type="button" data-queue-action="${item.action}">${item.action}</button></footer>
+      <footer><span>${item.impact} · ${item.deadline}</span><span>责任：${item.owner}</span><button type="button" data-event-index="${index}">${item.action}</button></footer>
     </article>
   `).join("");
 }
@@ -399,7 +437,7 @@ function renderEconomicLedger(plan) {
 
   const contribution = row.margin * row.tons / 10000;
 
-  document.getElementById("economicLedger").innerHTML = `${lines}<article class="ledger-total"><span>单位增量贡献</span><strong class="${row.margin < 0 ? "negative" : "positive"}">${row.margin > 0 ? "+" : ""}${row.margin}</strong><small>${row.tons}t × ${row.margin}元 = ${contribution.toFixed(1)}万元/24h</small></article>`;
+  document.getElementById("economicLedger").innerHTML = `${lines}<article class="ledger-total"><span>单位分配贡献</span><strong class="${row.margin < 0 ? "negative" : "positive"}">${row.margin > 0 ? "+" : ""}${row.margin}</strong><small>${row.tons}t × ${row.margin}元 = ${contribution.toFixed(1)}万元/24h</small></article>`;
 
 }
 
@@ -422,7 +460,7 @@ function renderWeakSignalEvidence() {
 
   const level = state.compressorDrift > 70 ? "护机优先" : state.compressorDrift > 35 ? "设备复核" : "持续观察";
 
-  document.getElementById("weakSignalState").textContent = `AI提示：${level}`;
+  document.getElementById("weakSignalState").textContent = `趋势提示：${level}`;
 
   document.getElementById("weakSignalEvidence").innerHTML = evidence.map(item => `
     <article><div><b>${item.label}</b><span>${item.trend}</span></div><strong>${item.value.toFixed(1)}${item.unit}</strong><div class="signal-track"><i style="width:${clamp(item.ratio * 100, 8, 100)}%"></i></div><small>${item.reference} · 验收样例，待接 SMC/DCS 历史趋势</small></article>
@@ -437,7 +475,7 @@ function executionMonitor(plan) {
     { label: "班长确认", status: "待确认", value: plan.risk > 55 ? "高风险双签" : "低风险单签", level: "pending" },
     { label: "目标负荷", status: `${plan.load}%`, value: "仅回写MES班次计划", level: "good" },
     { label: "演练执行反馈", status: `${actual}%（样例）`, value: `偏差 ${deviation > 0 ? "+" : ""}${deviation}pct`, level: Math.abs(deviation) > 3 ? "warn" : "good" },
-    { label: "效果复核", status: "待班末", value: `收益、能耗、库存、异常四项归因`, level: "pending" }
+    { label: "效果复核", status: "待班末", value: "分配贡献、能耗、库存、异常四项归因", level: "pending" }
   ];
 }
 
@@ -449,10 +487,10 @@ function enterpriseExecutionMonitor(plan) {
   const deviation = actual === null ? null : actual - plan.load;
 
   return [
-    { label: "班长确认", status: workflowLabels[uiState.workflow], value: plan.risk > 55 ? "高风险需调度主管复核" : "班长单签，15分钟有效", level: confirmed ? "good" : "pending" },
+    { label: "方案确认", status: workflowLabels[uiState.workflow], value: requiresSpecialist(plan) ? `班长+专业会签${hardTrigger() ? ` · ${hardTrigger()}` : ""}` : "班长确认，15分钟有效", level: confirmed ? "good" : "pending" },
     { label: "目标负荷", status: `${plan.load}%`, value: "建议值；仅允许写入MES班次计划", level: "good" },
-    { label: "现场执行反馈", status: actual === null ? "待DCS回传" : `${actual}%（演练）`, value: deviation === null ? "未接企业DCS，不构造实际值" : `偏差 ${deviation > 0 ? "+" : ""}${deviation}pct`, level: deviation !== null && Math.abs(deviation) > 3 ? "warn" : actual === null ? "pending" : "good" },
-    { label: "效果复核", status: uiState.workflow === "reviewed" ? "已完成（演示）" : "待班末", value: "收益、能耗、库存、异常四项归因", level: uiState.workflow === "reviewed" ? "good" : "pending" }
+    { label: "现场执行反馈", status: actual === null ? "待Historian回传" : `${actual}%`, value: deviation === null ? "未接企业数据，不构造实际值" : `偏差 ${deviation > 0 ? "+" : ""}${deviation}pct`, level: deviation !== null && Math.abs(deviation) > 3 ? "warn" : actual === null ? "pending" : "good" },
+    { label: "效果复核", status: uiState.workflow === "reviewed" ? "已完成（演示）" : "待班末", value: "分配贡献、能耗、库存、异常四项归因", level: uiState.workflow === "reviewed" ? "good" : "pending" }
   ];
 
 }
@@ -480,31 +518,72 @@ function updateWorkflowControls() {
 
 function freshness() {
   return [
-    { title: "DCS / IoT", body: "18-45秒，关键过程点完整；可参与重算。", level: "good" },
-    { title: "MES / ERP", body: "4-9分钟，订单和班次执行口径一致。", level: "good" },
-    { title: "热电 APC", body: "2分钟，蒸汽和公辅约束可用。", level: "good" },
-    { title: "市场行情", body: "23分钟，仅用于提醒；重算前需运营人员确认价格。", level: "warn" }
+    { title: "DCS / IoT", body: "验收样例：接口待联调。试点只读接入后，过程摘要超过15分钟自动降级。", level: "warn" },
+    { title: "MES / ERP", body: "验收样例：订单、库存与班次计划采用演示数据；试点需统一主数据口径。", level: "warn" },
+    { title: "热电 APC", body: "验收样例：公辅约束未连接企业系统；首期接收只读约束摘要。", level: "warn" },
+    { title: "市场行情", body: uiState.marketConfirmed ? `运营样例已确认 V${activeMarket().version}，${activeMarket().confirmedAt.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}。` : `待运营核价；计算沿用 V${activeMarket().version}，页面新输入尚未生效。`, level: uiState.marketConfirmed ? "good" : "warn" }
   ];
 }
 
 function aiAnswer(question, plan) {
   const answers = {
-    nitric: `当前不建议硝酸满负荷。硝酸行情趋势为 ${state.nitricTrend}%，单位液氨验收样例贡献为 ${enterpriseAllocationRows(plan).find(row => row.name === "硝酸").margin} 元/t-NH3；同时液氨库存为 ${state.inventory}%。建议先保复合肥刚性订单和尿素溶液，硝酸维持最低经济负荷，4小时后按运营确认的新价格、订单与罐存重算。依据：[产供销全线事实表] [MES订单] [罐区库存]。`,
-    allocation: `液氨价格 ${state.ammoniaPrice} 元/吨时，不能只看售价。当前排序先看安全与流程连续，再比较单位液氨边际贡献、固定成本吸收和启停损失。建议保复合肥刚性订单、尿素溶液和联碱连续消纳；硝酸随行情降负荷；外售作为弹性池。只有库存跌破38%且刚性订单缺口扩大时才询价外采。依据：[ERP订单] [边际贡献模型] [启停损失规则]。`,
-    compressor: `压机弱信号为 ${state.compressorDrift}、健康评分 ${state.health}。若弱信号超过60或多变量连续同向漂移，先限制升负荷速率，核查振动、轴位移、入口温压和喘振裕度，并通知设备工程师；超过70时优先切换护机方案。AI只给黄灯和处置顺序，不触发联锁或开停车。依据：[SMC压机趋势] [DCS摘要] [设备处置卡]。`
+    nitric: `硝酸趋势按运营已确认版本参与计算；若行情、订单或罐存口径不完整，则转人工复核。`,
+    allocation: `液氨去向先过安全与连续生产约束，再按相对外售分配贡献比较。`,
+    compressor: `压机趋势证据仅用于安排复核顺序，不触发联锁或开停车。`
   };
   return answers[question] || answers.allocation;
 }
 
-function feishu(plan, text) {
+function structuredAiAnswer(question, plan) {
+  const market = activeMarket();
+  const nitric = enterpriseAllocationRows(plan).find(row => row.name === "硝酸");
+  const answers = {
+    nitric: {
+      conclusion: "硝酸不排满负荷，先维持可接受的经济负荷。",
+      evidence: `运营确认行情 V${market.version} 中硝酸趋势 ${market.nitricTrend}%，单位液氨分配贡献 ${nitric.margin} 元/t-NH3；库存 ${state.inventory}%。`,
+      risk: "若订单、罐存或装置最低负荷口径不完整，建议仅作备选，不进入确认。",
+      next: "核对硝酸订单、最低稳定负荷与罐区可用量，4小时后重算。",
+      owner: "生产调度 + 硝酸装置"
+    },
+    allocation: {
+      conclusion: "先保安全和流程连续，再比较各去向相对液氨外售的分配贡献。",
+      evidence: `当前采用行情 V${market.version}：液氨 ${market.ammoniaPrice} 元/吨；复合肥刚性订单、尿素溶液和联碱连续消纳优先。`,
+      risk: "外采是补缺成本，外售是比较基准；两者不能与内部去向混作同一收益排名。",
+      next: "运营核价、调度核单、罐区核量后，由班长在15分钟有效期内确认。",
+      owner: "运营 + 调度长 + 班长"
+    },
+    compressor: {
+      conclusion: state.compressorDrift > 60 ? "暂停升负荷，转设备专业会签。" : "保持观察，出现多变量同向偏离时转设备复核。",
+      evidence: `当前趋势证据 ${state.compressorDrift}、设备健康 ${state.health}；这些数值是交互样例，待接 SMC/DCS 原始趋势。`,
+      risk: "单一综合滑块不能替代振动、轴位移、温度和防喘振裕度的现场判断。",
+      next: "核查测点质量和原始趋势，设备专业给出处置意见；不触发联锁或开停车。",
+      owner: "设备工程师 + 当班班长"
+    }
+  };
+  return answers[question] || answers.allocation;
+}
+
+function renderAiAnswer(plan) {
+  const answer = structuredAiAnswer(document.getElementById("aiAnswer").dataset.question, plan);
+  document.getElementById("aiAnswer").innerHTML = `
+    <strong>${answer.conclusion}</strong>
+    <dl>
+      <div><dt>依据</dt><dd>${answer.evidence}</dd></div>
+      <div><dt>边界</dt><dd>${answer.risk}</dd></div>
+      <div><dt>下一步</dt><dd>${answer.next}</dd></div>
+      <div><dt>责任岗位</dt><dd>${answer.owner}</dd></div>
+    </dl>`;
+}
+
+function feishu(plan, text) {
   return `
     <div class="feishu-card">
       <h3>${text.mode}｜合成氨负荷调整</h3>
       <p>${text.title}</p>
       <div class="field-grid">
         <span><b>目标负荷</b>${plan.load}%</span>
-        <span><b>风险指数</b>${plan.risk}</span>
-        <span><b>审批路径</b>${plan.risk > 55 ? "班长+调度主管" : "班长确认"}</span>
+        <span><b>证据完整度</b>${evidenceCompleteness()}/8</span>
+        <span><b>确认路径</b>${requiresSpecialist(plan) ? "班长+专业会签" : "班长确认"}</span>
         <span><b>回写范围</b>MES计划/交接/复盘</span>
         <span><b>多维表格</b>班次事实与未采纳原因</span>
         <span><b>Aily追问</b>约束解释/异常处置</span>
@@ -515,7 +594,7 @@ function feishu(plan, text) {
 }
 
 function feishuContract(plan, text) {
-  const riskPath = plan.risk > 55 ? "班长确认 → 调度主管复核 → 安环知会" : "班长确认";
+  const riskPath = requiresSpecialist(plan) ? "班长确认 → 设备专业/调度主管会签" : "班长确认";
   return {
     card: {
       target_chat: "合成氨当班调度群",
@@ -524,7 +603,7 @@ function feishuContract(plan, text) {
       fields: {
         target_load_percent: plan.load,
         risk_index: plan.risk,
-        confidence_percent: plan.confidence,
+        evidence_completeness: `${evidenceCompleteness()}/8`,
         approval_path: riskPath
       }
     },
@@ -552,7 +631,7 @@ function feishuContract(plan, text) {
     },
     callback: {
       events: ["im.message.receive_v1", "card.action.trigger", "approval.instance.status_changed", "bitable.record.changed"],
-      guardrails: ["签名校验", "幂等键", "DCS/SIS只读", "低置信度自动降级人工"]
+      guardrails: ["签名校验", "幂等键", "DCS/SIS只读", "证据不完整时转人工"]
     },
     aily: {
       entry: "合成氨调度问答助手",
@@ -564,11 +643,11 @@ function feishuContract(plan, text) {
 function renderFeishuHub(plan, text) {
   const contract = feishuContract(plan, text);
   const cards = [
-    { title: "班组卡片", body: `已完成“${text.mode}”卡片字段与按钮原型；企业应用发布后送入当班确认链。`, tag: "原型待发布" },
-    { title: "负荷审批", body: `当前风险拟走“${contract.card.fields.approval_path}”，通过后只回写MES摘要。`, tag: "流程待配置" },
+    { title: "班组卡片", body: `已完成“${text.mode}”卡片字段与按钮原型；企业应用发布后送入当班确认链。`, tag: "交互原型" },
+    { title: "负荷审批", body: `当前建议走“${contract.card.fields.approval_path}”，通过后只回写MES摘要。`, tag: "审批原型" },
     { title: "在线复盘库", body: `真实 Base 已建立13个字段和3条完整样例，记录目标、实际、偏差与未采纳原因。`, tag: "在线可打开" },
     { title: "执行任务", body: "验收任务已在飞书真实创建并可打开；生产调度任务须由审批实例携带责任人与有效期触发。", tag: "真实链路已验证" },
-    { title: "飞书 AI", body: "问答原型必须标出班次事实、设备趋势和规则来源；无依据时转人工复核。", tag: "发布需管理员授权" },
+    { title: "飞书智能问答", body: "问答原型标出班次事实、设备趋势和规则来源；无依据时转人工复核。", tag: "Aily待管理员授权" },
     { title: "知识回流", body: "卡片、审批、任务和Base结果统一形成下一班可检索的经验样本。", tag: "持续校准" }
   ];
   document.getElementById("feishuHub").innerHTML = cards.map(item => `
@@ -598,7 +677,30 @@ function roleViews(plan) {
   ];
 }
 
-function decisionRules(plan) {
+function effectiveRoleViews(plan) {
+  const market = activeMarket();
+  const profiles = {
+    dispatcher: [
+      { title: "本班要做", body: `核对 V${market.version} 行情、刚性订单与罐区可用量，比较三案后提交 ${plan.load}% 目标负荷建议。`, level: "good" },
+      { title: "交接重点", body: "记录未采纳原因、有效期、回滚条件和下一次重算时间。", level: "warn" }
+    ],
+    leader: [
+      { title: "确认范围", body: `确认目标负荷 ${plan.load}%、约束解释和回滚条件；${requiresSpecialist(plan) ? "本轮必须专业会签。" : "本轮可由班长确认。"}`, level: requiresSpecialist(plan) ? "warn" : "good" },
+      { title: "现场边界", body: "建议只写入班次计划和交接记录，现场按现行操作规程执行。", level: "good" }
+    ],
+    equipment: [
+      { title: "趋势复核", body: `压缩机趋势证据 ${state.compressorDrift}、设备健康 ${state.health}；核查原始趋势、测点质量与防喘振裕度。`, level: state.health < 68 || state.compressorDrift > 35 ? "warn" : "good" },
+      { title: "给调度的结论", body: "输出可升、限升、保持、降负荷或退出建议，并写明复查时点。", level: "good" }
+    ],
+    hse: [
+      { title: "底线核对", body: "确认罐区压力、安全库存、重大危险源和环保约束未被经济目标覆盖。", level: "good" },
+      { title: "越界处置", body: "触及安全或环保红线时，经济排序立即失效，转现行应急和联锁体系。", level: "danger" }
+    ]
+  };
+  return profiles[uiState.role] || profiles.dispatcher;
+}
+
+function decisionRules(plan) {
   const continuityRisk = state.demand > 84 || state.inventory < 45 || state.energy > 78;
   const equipmentRisk = state.health < 62 || plan.risk > 62;
   return [
@@ -622,9 +724,9 @@ function decisionRules(plan) {
 
 function dataInterfaces() {
   return [
-    { title: "MES/合成氨调控平台", body: "承接日计划、班次执行、负荷调整记录和交接复盘；厂商名称按口述待企业确认。", level: "good" },
-    { title: "IoT数据平台", body: "采集合成氨DCS底层过程数据，进入班次事实表和弱信号趋势分析。", level: "good" },
-    { title: "合成氨DCS", body: "负责主装置局部回路、顺控、报警和联锁；AI只读取historian摘要。", level: "good" },
+    { title: "MES/合成氨调控平台", body: "30天试点先接日计划、订单与班次记录离线导出；字段口径确认后再做只读接口。", level: "warn" },
+    { title: "IoT数据平台", body: "30天试点先导入5-15分钟过程摘要，不接控制写入；用于事实快照和趋势复核。", level: "warn" },
+    { title: "合成氨DCS", body: "负责主装置回路、顺控、报警和联锁；本方案只接 Historian 摘要，绝不写控制参数。", level: "good" },
     { title: "和利时DCS/热电APC", body: "提供热电、公辅和蒸汽管网约束，APC结果用于跨装置负荷联动。", level: "good" },
     { title: "SMC压机/康迪森机组", body: "压缩机、气轮机驱动系统和关键机组健康趋势，用于护机和特殊停机取舍。", level: state.health < 68 ? "warn" : "good" }
   ];
@@ -643,8 +745,8 @@ function renderScenarioCards(plan) {
       <p>${item.body}</p>
       <div class="mini-kpis">
         <span>负荷 ${item.load}%</span>
-        <span>贡献指数 ${item.margin}</span>
-        <span>风险 ${item.risk}</span>
+        <span>经济比较值 ${item.margin}</span>
+        <span>复核分 ${item.risk}</span>
       </div>
     </article>
   `).join("");
@@ -712,7 +814,7 @@ function pushEvent(kind, plan, text) {
     track: "执行跟踪已开始（演示）"
   };
   const detail = {
-    recalc: `${text.mode}，目标负荷 ${plan.load}%，风险 ${plan.risk}，置信度 ${plan.confidence}%。`,
+    recalc: `${text.mode}，目标负荷 ${plan.load}%，证据完整度 ${evidenceCompleteness()}/8，行情版本 V${activeMarket().version}。`,
     card: `卡片字段草稿已生成，尚未发送；包含负荷、风险、约束和确认按钮。`,
     approval: `审批通过后只写MES计划、交接摘要和复盘记录，不写DCS/SIS。`,
     bitable: `本地草稿包含采纳状态、未采纳原因、执行偏差和班长备注，尚未写入多维表格。`,
@@ -720,7 +822,7 @@ function pushEvent(kind, plan, text) {
     review: `当前输入、判断依据、采纳状态和效果指标已进入复盘草稿。`,
     submit: `建议仍未写入生产系统，等待班长按验收状态机确认。`,
     approve: `仅记录演示确认状态；企业上线后需由飞书审批实例返回真实操作人和时间。`,
-    track: `现场负荷为演练反馈值；未接企业DCS前不作为实际生产记录。`
+    track: `已进入跟踪状态；未接 Historian 前保持“待回传”，不构造实际负荷。`
   };
   events.unshift({ title: labels[kind] || "已记录动作", body: detail[kind] || "" });
   if (events.length > 6) events.pop();
@@ -730,7 +832,47 @@ function renderEvents() {
   document.getElementById("eventLog").innerHTML = events.map(item => `<div><b>${item.title}</b>${item.body}</div>`).join("");
 }
 
-function render() {
+function renderMarketGate() {
+  const market = activeMarket();
+  const status = document.getElementById("marketGateStatus");
+  const button = document.getElementById("confirmMarket");
+  const header = document.getElementById("headerMarketState");
+  const source = document.getElementById("marketSourceState");
+  status.textContent = uiState.marketConfirmed
+    ? `运营样例已确认 V${market.version} · ${market.ammoniaPrice}元/t · 硝酸${market.nitricTrend}%`
+    : `待运营核价，计算沿用 V${market.version} · 页面新输入尚未生效`;
+  header.textContent = uiState.marketConfirmed ? `行情样例 V${market.version} 已确认` : "行情样例需核价";
+  source.innerHTML = uiState.marketConfirmed
+    ? `<i class="pulse good"></i>行情样例 V${market.version} 已确认 · 本轮建议已重算`
+    : '<i class="pulse warn"></i>行情样例待核价 · 新输入不参与建议';
+  document.getElementById("marketGate").classList.toggle("confirmed", uiState.marketConfirmed);
+  button.textContent = uiState.marketConfirmed ? "重新确认本轮行情" : "确认本轮样例行情";
+}
+
+function openIncident(index) {
+  const item = eventQueue(calc())[index];
+  if (!item) return;
+  uiState.activeIncident = item;
+  document.getElementById("incidentLevel").textContent = item.level.toUpperCase();
+  document.getElementById("incidentTitle").textContent = item.title;
+  document.getElementById("incidentSource").textContent = `${item.source} · ${item.owner} · ${item.deadline}`;
+  document.getElementById("incidentFacts").innerHTML = item.facts.map(fact => `<span>${fact}</span>`).join("");
+  document.getElementById("incidentChecklist").innerHTML = item.checklist.map(step => `<li>${step}</li>`).join("");
+  document.querySelector("#incidentDialog .dialog-boundary").textContent = "这里只记录确认、转派和复核，不向 DCS/SIS 下发控制动作。";
+  document.getElementById("incidentDialog").showModal();
+}
+
+function openApproval(plan) {
+  const specialist = requiresSpecialist(plan);
+  document.getElementById("approvalReason").textContent = specialist ? (hardTrigger() || `综合复核分 ${plan.risk}，需专业会签`) : "未触发专业会签线，班长确认后可进入执行跟踪。";
+  document.getElementById("specialistSignRow").hidden = !specialist;
+  document.getElementById("leaderSign").checked = false;
+  document.getElementById("specialistSign").checked = false;
+  document.getElementById("approvalNote").value = "";
+  document.getElementById("approvalDialog").showModal();
+}
+
+function render() {
   const plan = calc();
   const text = strategy(plan);
 
@@ -747,11 +889,15 @@ function render() {
   document.getElementById("loadKpi").textContent = `${plan.load}%`;
   document.getElementById("nh3Kpi").textContent = `${plan.nh3.toLocaleString()}t`;
   document.getElementById("marginKpi").textContent = `${balance.contributionWan >= 0 ? "+" : ""}${balance.contributionWan.toFixed(1)}万`;
-  document.getElementById("riskKpi").textContent = `${plan.risk < 45 ? "可控" : plan.risk < 65 ? "关注" : "高"} ${plan.risk}`;
-  document.getElementById("dataCompleteness").textContent = "验收样例字段 8/8 · 企业接口待联调";
-  document.getElementById("operatorNote").textContent = `当前建议：${text.mode}；状态：${workflowLabels[uiState.workflow]}；审批路径：${plan.risk > 55 ? "班长+调度主管" : "班长确认"}；回写范围限定为MES计划、交接摘要和复盘记录。`;
-  document.getElementById("constraintCount").textContent = `${constraints(plan).length}项`;
-  document.getElementById("modelTrust").textContent = plan.confidence < 75 ? "仅规则提醒" : "候选校准方法";
+  const constraintRows = constraints(plan);
+  const hardCount = constraintRows.filter(item => item.level === "danger").length;
+  const reviewCount = constraintRows.filter(item => item.level === "warn").length;
+  document.getElementById("riskKpi").textContent = `${hardCount}项越界`;
+  document.getElementById("riskKpiNote").textContent = `${reviewCount}项待复核`;
+  document.getElementById("dataCompleteness").textContent = `验收样例字段 ${evidenceCompleteness()}/8 · 企业接口待联调`;
+  document.getElementById("operatorNote").textContent = `当前建议：${text.mode}；状态：${workflowLabels[uiState.workflow]}；确认路径：${requiresSpecialist(plan) ? "班长+专业会签" : "班长确认"}；只允许写入MES计划、交接摘要和复盘记录。`;
+  document.getElementById("constraintCount").textContent = `${constraintRows.length}项`;
+  document.getElementById("modelTrust").textContent = `证据 ${evidenceCompleteness()}/8`;
 
   document.getElementById("recommendationId").textContent = `NH3-D01-${String(uiState.recommendationVersion).padStart(3, "0")}`;
 
@@ -760,7 +906,9 @@ function render() {
   document.getElementById("validUntil").textContent = validUntil.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
 
   document.getElementById("rollbackRule").textContent = "偏差>3pct、关键数据失效或现场拒绝";
-  document.getElementById("shiftSummary").textContent = `${text.mode}｜24h`;
+  document.getElementById("shiftSummary").textContent = `${text.mode}｜24h`;
+  document.getElementById("digitalEmployeeMeta").textContent = `只读建议层 · 最近核算 ${uiState.generatedAt.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}`;
+  renderMarketGate();
   renderEventQueue(plan);
   renderEnterpriseAllocation(plan);
 
@@ -776,19 +924,19 @@ function render() {
   renderExecution(plan);
 
   updateWorkflowControls();
-  renderList("constraints", constraints(plan));
+  renderList("constraints", constraintRows);
   renderList("benefitTrace", benefitTrace(plan));
   document.getElementById("feishuPreview").innerHTML = feishu(plan, text);
   renderFeishuHub(plan, text);
   renderList("knowledgeLoop", knowledge(plan));
-  renderList("roleViews", roleViews(plan));
+  renderList("roleViews", effectiveRoleViews(plan));
   renderList("decisionRules", decisionRules(plan));
   renderList("dataInterfaces", dataInterfaces());
   renderList("freshness", freshness());
   if (!document.getElementById("aiAnswer").dataset.question) {
     document.getElementById("aiAnswer").dataset.question = "allocation";
   }
-  document.getElementById("aiAnswer").textContent = aiAnswer(document.getElementById("aiAnswer").dataset.question, plan);
+  renderAiAnswer(plan);
   renderEvents();
 
   applyWorkspace();
@@ -815,10 +963,14 @@ document.getElementById("ledgerRouteTabs").addEventListener("click", event => {
 document.querySelectorAll("[data-workflow]").forEach(button => {
 
   button.addEventListener("click", event => {
-    const transitions = { submit: "pending", approve: "approved", track: "tracking", review: "reviewed" };
     const action = event.currentTarget.dataset.workflow;
+    if (action === "approve") {
+      openApproval(calc());
+      return;
+    }
+    const transitions = { submit: "pending", track: "tracking", review: "reviewed" };
     uiState.workflow = transitions[action];
-    if (action === "track") uiState.actualLoad = clamp(calc().load - (state.compressorDrift > 60 ? 4 : 1), 50, 95);
+    if (action === "track") uiState.actualLoad = null;
     pushEvent(action, calc(), strategy(calc()));
     render();
   });
@@ -828,6 +980,7 @@ document.querySelectorAll("[data-workflow]").forEach(button => {
 document.querySelectorAll("input[type='range']").forEach(input => {
   input.addEventListener("input", event => {
     state[event.target.dataset.key] = Number(event.target.value);
+    if (["ammoniaPrice", "nitricTrend"].includes(event.target.dataset.key)) uiState.marketConfirmed = false;
 
     uiState.workflow = "draft";
     uiState.actualLoad = null;
@@ -840,6 +993,7 @@ document.querySelectorAll("input[type='range']").forEach(input => {
 document.querySelectorAll("[data-preset]").forEach(button => {
   button.addEventListener("click", event => {
     Object.assign(state, presets[event.target.dataset.preset]);
+    uiState.marketConfirmed = false;
 
     uiState.workflow = "draft";
     uiState.actualLoad = null;
@@ -889,15 +1043,70 @@ document.querySelectorAll("[data-ai-action]").forEach(button => {
 });
 
 document.getElementById("eventQueue").addEventListener("click", event => {
-  const button = event.target.closest("[data-queue-action]");
+  const button = event.target.closest("[data-event-index]");
   if (!button) return;
-  const plan = calc();
-  const text = strategy(plan);
-  pushEvent("card", plan, text);
-  document.getElementById("feishuLiveState").textContent = `${button.dataset.queueAction}｜已转飞书协同草稿`;
-  render();
-});
+  openIncident(Number(button.dataset.eventIndex));
+  return;
+  // The dialog records acknowledgement or creates a Feishu task draft.
+});
 
+document.getElementById("confirmMarket").addEventListener("click", () => {
+  uiState.confirmedMarket = {
+    ammoniaPrice: state.ammoniaPrice,
+    nitricTrend: state.nitricTrend,
+    version: uiState.confirmedMarket.version + 1,
+    confirmedAt: new Date()
+  };
+  uiState.marketConfirmed = true;
+  uiState.workflow = "draft";
+  uiState.actualLoad = null;
+  uiState.generatedAt = new Date();
+  uiState.recommendationVersion += 1;
+  pushEvent("recalc", calc(), strategy(calc()));
+  render();
+});
+
+document.querySelectorAll("[data-role]").forEach(button => {
+  button.addEventListener("click", event => {
+    uiState.role = event.currentTarget.dataset.role;
+    document.querySelectorAll("[data-role]").forEach(item => {
+      const active = item.dataset.role === uiState.role;
+      item.classList.toggle("active", active);
+      item.setAttribute("aria-selected", String(active));
+    });
+    renderList("roleViews", effectiveRoleViews(calc()));
+  });
+});
+
+document.querySelectorAll("[data-incident-command]").forEach(button => {
+  button.addEventListener("click", event => {
+    const item = uiState.activeIncident;
+    if (!item) return;
+    const command = event.currentTarget.dataset.incidentCommand;
+    const labels = { evidence: "依据不足，已退回补数", ack: "已确认收到", task: "飞书任务草稿已生成" };
+    uiState.incidentStatus[item.id] = labels[command];
+    events.unshift({ title: `${item.title}｜${labels[command]}`, body: `${item.owner}负责，${item.deadline}复核；未向 DCS/SIS 下发动作。` });
+    if (events.length > 6) events.pop();
+    document.getElementById("feishuLiveState").textContent = command === "task" ? "执行任务草稿已生成" : "事件状态已记录";
+    document.getElementById("incidentDialog").close();
+    render();
+  });
+});
+
+document.getElementById("submitApproval").addEventListener("click", () => {
+  const plan = calc();
+  const leaderSigned = document.getElementById("leaderSign").checked;
+  const specialistSigned = document.getElementById("specialistSign").checked;
+  if (!leaderSigned || (requiresSpecialist(plan) && !specialistSigned)) {
+    document.getElementById("approvalReason").textContent = requiresSpecialist(plan) ? "需要班长和专业人员共同确认。" : "需要班长确认。";
+    return;
+  }
+  uiState.workflow = "approved";
+  pushEvent("approve", plan, strategy(plan));
+  document.getElementById("approvalDialog").close();
+  render();
+});
+
 function updateShiftClock() {
 
   document.getElementById("shiftClock").textContent = new Date().toLocaleTimeString("zh-CN", { hour12: false });

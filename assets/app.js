@@ -31,7 +31,9 @@ const uiState = {
 
   incidentStatus: {},
 
-  activeIncident: null
+  activeIncident: null,
+
+  actionAcks: {}
 
 };
 
@@ -45,8 +47,21 @@ function hardTrigger() {
   return "";
 }
 
+function safetyStopReason() {
+  if (state.compressorDrift >= 85) return "压缩机多变量趋势达到演练停算线";
+  if (state.health <= 48) return "关键设备健康输入达到演练停算线";
+  return "";
+}
+
 function requiresSpecialist(plan) {
-  return Boolean(hardTrigger()) || plan.risk >= 55;
+  return Boolean(professionalReviewReason());
+}
+
+function professionalReviewReason() {
+  if (hardTrigger()) return hardTrigger();
+  if (state.energy > 88) return "公辅约束触发热电专业复核";
+  if (state.inventory < 40) return "液氨库存触发罐区与调度主管复核";
+  return "";
 }
 
 function evidenceCompleteness() {
@@ -102,7 +117,6 @@ function calc() {
   const stock = clamp(state.inventory + load * 0.14 - state.demand * 0.09, 24, 96);
   const priceLift = (market.ammoniaPrice - 2000) / 180;
   const margin = clamp(1.0 + order * 0.06 + priceLift + energyGain * 0.24 - state.energy * 0.035 - risk * 0.02, -4, 15);
-  const confidence = clamp(94 - risk * 0.23 + state.health * 0.05, 66, 95);
   return {
     load: Math.round(load),
     risk: Math.round(risk),
@@ -110,15 +124,28 @@ function calc() {
     energyGain: Math.round(energyGain),
     stock: Math.round(stock),
     margin: margin.toFixed(1),
-    nh3: Math.round(1950 * load / 100),
-    confidence: Math.round(confidence)
+    nh3: Math.round(1950 * load / 100)
   };
 }
 
 function strategy(plan) {
 
   const market = activeMarket();
-  if (state.health < 62 || state.compressorDrift > 60) {
+  if (safetyStopReason()) {
+    return {
+      mode: "安全闸门锁定",
+      title: "停止生成新的负荷目标，维持最近批准方案并按现场规程处置",
+      text: `${safetyStopReason()}。当前仅保留事实快照、测点复核和岗位通知，不显示经济排序，不生成审批或跨装置动作。演练停算线需由企业设备、工艺和安环专业联合标定。`
+    };
+  }
+  if (feasibilityIssues(plan).length) {
+    return {
+      mode: "规则方案不可行",
+      title: "当前输入下没有通过物料平衡门禁的可执行方案",
+      text: `${feasibilityIssues(plan).join("；")}。请调整合成负荷、下游分配、外售或外采条件后重算；不可行方案不能进入审批和动作派发。`
+    };
+  }
+  if (state.health < 62 || state.compressorDrift > 60) {
     return {
       mode: "护机稳产",
       title: "压缩负荷上限，优先保护循环压缩机与合成塔温升边界",
@@ -161,7 +188,7 @@ function scenarios(plan) {
 
 function constraints(plan) {
   return [
-    { title: "合成塔床层温升", body: state.health < 62 ? "设备健康下降，温升和热点偏差需要班长复核。" : "未触发硬约束，继续监控温升趋势。", level: state.health < 62 ? "danger" : "good" },
+    { title: "安全与可行性门禁", body: decisionBlockReason(plan) ? `${decisionBlockReason(plan)}；停止输出新目标，转人工处置或重算。` : "安全停算线和24小时物料平衡门禁均已通过；现场边界仍以企业系统为准。", level: decisionBlockReason(plan) ? "danger" : "good" },
     { title: "循环压缩机趋势", body: state.health < 68 || state.compressorDrift > 35 ? `健康 ${state.health}、趋势证据 ${state.compressorDrift}；限制升负荷速率并插入点检窗口。` : "验收样例未触发复核线；现场结论仍以设备系统和人员确认为准。", level: state.health < 68 || state.compressorDrift > 35 ? "warn" : "good" },
     { title: "液氨库存", body: state.inventory < 48 ? "库存偏紧，冻结弹性外售并优先补安全库存。" : "库存支持下游消纳和短时错峰。", level: state.inventory < 48 ? "warn" : "good" },
     { title: "能源窗口", body: state.energy > 80 ? "高价窗口触发错峰策略，需核对蒸汽和电力口径。" : "能源成本允许维持经济负荷。", level: state.energy > 80 ? "warn" : "good" },
@@ -210,6 +237,76 @@ function schedule(plan) {
   ];
 }
 
+function dispatchActions(plan) {
+  const balance = massBalance(plan);
+  const nitric = enterpriseAllocationRows(plan).find(row => row.name === "硝酸");
+  const direction = plan.load > 86 ? "升" : plan.load < 86 ? "降" : "稳";
+  return [
+    {
+      id: "synthesis-loop",
+      unit: "合成回路",
+      current: "班次基线 86%",
+      target: `${direction}至 ${plan.load}%`,
+      cadence: plan.load === 86 ? "维持并15分钟复核" : `每10分钟不超过1pct，${Math.abs(plan.load - 86) * 10}分钟复核`,
+      owner: "合成主操",
+      guard: "氢氮比、床层温升、压机余量均在操作边界内"
+    },
+    {
+      id: "nitric-unit",
+      unit: "硝酸装置",
+      current: `需求/负荷样例 ${nitric.demand}`,
+      target: nitric.action === "降" ? "降负荷并释放液氨" : "维持经济负荷",
+      cadence: nitric.action === "降" ? "30分钟内分两步复核" : "本班维持",
+      owner: "硝酸主操",
+      guard: "最低稳定负荷、吸收系统和下游库存已确认"
+    },
+    {
+      id: "tank-allocation",
+      unit: "罐区与液氨去向",
+      current: `期初 ${balance.opening}t`,
+      target: `24h期末测算 ${Math.round(balance.ending)}t`,
+      cadence: "每小时核量，订单变化即重算",
+      owner: "生产调度",
+      guard: `运营行情V${activeMarket().version}、订单和罐区可用量完成核对`
+    },
+    {
+      id: "utility-balance",
+      unit: "热电与公辅",
+      current: `能源指数 ${state.energy}`,
+      target: state.energy > 80 ? "锁定高价窗口负荷上限" : "匹配合成负荷并保留余量",
+      cadence: state.energy > 80 ? "30分钟内确认错峰窗口" : "每小时复核一次",
+      owner: "公辅调度",
+      guard: "蒸汽母管、电力、循环水及气轮机驱动余量已确认"
+    }
+  ];
+}
+
+function actionReceiptCount(plan) {
+  const rows = dispatchActions(plan);
+  return rows.filter(row => uiState.actionAcks[row.id]).length;
+}
+
+function renderDispatchActions(plan) {
+  const rows = dispatchActions(plan);
+  if (decisionBlockReason(plan)) {
+    document.getElementById("actionReceiptState").textContent = safetyStopReason() ? "安全闸门锁定" : "可行性门禁未通过";
+    document.getElementById("actionSheet").innerHTML = `<tr><td colspan="7"><b>不生成跨装置动作单</b><br>${decisionBlockReason(plan)}。${safetyStopReason() ? "维持最近批准方案并转现场规程。" : "调整负荷、去向或外采条件后重新计算。"}</td></tr>`;
+    return;
+  }
+  const canAcknowledge = ["approved", "tracking", "reviewed"].includes(uiState.workflow);
+  const acknowledged = actionReceiptCount(plan);
+  document.getElementById("actionReceiptState").textContent = canAcknowledge
+    ? `${acknowledged}/${rows.length}项已接令`
+    : "待方案确认";
+  document.getElementById("actionSheet").innerHTML = rows.map(row => {
+    const checked = Boolean(uiState.actionAcks[row.id]);
+    return `<tr class="${checked ? "acknowledged" : ""}">
+      <td><b>${row.unit}</b></td><td>${row.current}</td><td>${row.target}</td><td>${row.cadence}</td><td>${row.owner}</td><td>${row.guard}</td>
+      <td><label class="action-receipt"><input type="checkbox" data-action-ack="${row.id}" ${checked ? "checked" : ""} ${canAcknowledge ? "" : "disabled"} /><span>${checked ? "已接令" : "待接令"}</span></label></td>
+    </tr>`;
+  }).join("");
+}
+
 function benefitTrace(plan) {
 
   const contributionWan = massBalance(plan).contributionWan;
@@ -348,6 +445,19 @@ function massBalance(plan) {
   return { rows, purchase, allocation, opening, floor, ceiling, ending, hoursToFloor, contributionWan };
 
 }
+
+function feasibilityIssues(plan) {
+  const balance = massBalance(plan);
+  const issues = [];
+  if (balance.ending < balance.floor) issues.push(`24小时期末可用量 ${Math.round(balance.ending)}t 低于安全下限 ${balance.floor}t`);
+  if (balance.ending > balance.ceiling) issues.push(`24小时期末可用量 ${Math.round(balance.ending)}t 高于罐区样例上限 ${balance.ceiling}t`);
+  return issues;
+}
+
+function decisionBlockReason(plan) {
+  if (safetyStopReason()) return safetyStopReason();
+  return feasibilityIssues(plan).join("；");
+}
 
 function eventQueue(plan) {
   const events = [];
@@ -384,6 +494,10 @@ function renderAllocation(plan) {
 }
 
 function renderEnterpriseAllocation(plan) {
+  if (safetyStopReason()) {
+    document.getElementById("allocationTable").innerHTML = `<tr><td colspan="7"><b>经济排序已冻结</b><br>${safetyStopReason()}。当前仅显示事实快照并转专业处置。</td></tr>`;
+    return;
+  }
 
   document.getElementById("allocationTable").innerHTML = enterpriseAllocationRows(plan).map(row => `
     <tr data-route="${row.name}"><td><b>${row.name}</b></td><td>${row.demand}</td><td>${row.tons.toLocaleString()}t</td><td class="${row.margin < 0 ? "negative" : "positive"}">${row.margin > 0 ? "+" : ""}${row.margin} 元/t-NH3</td><td>${row.restart}</td><td><span class="decision-pill ${row.action === "降" || row.action === "限" || row.action === "不采" ? "warn" : "good"}">${row.action}</span></td><td>${row.why}</td></tr>
@@ -394,12 +508,25 @@ function renderEnterpriseAllocation(plan) {
 function renderMassBalance(plan) {
 
   const balance = massBalance(plan);
+  if (safetyStopReason()) {
+    document.getElementById("balanceState").textContent = "停止滚动测算";
+    document.getElementById("massBalance").innerHTML = [
+      ["期初可用量", `${balance.opening.toLocaleString()}t`, "罐区验收样例"],
+      ["最近批准方案", "--", "待MES读取"],
+      ["当前实际产氨", "--", "待Historian回传"],
+      ["当前实际分配", "--", "待MES/罐区回传"],
+      ["安全库存下限", `${balance.floor}t`, "企业校准前样例"]
+    ].map(card => `<article><span>${card[0]}</span><strong>${card[1]}</strong><small>${card[2]}</small></article>`).join("");
+    document.getElementById("inventoryBand").style.left = `${clamp((balance.opening - balance.floor) / (balance.ceiling - balance.floor) * 100, 0, 100)}%`;
+    document.getElementById("balanceNote").textContent = `${safetyStopReason()}；不使用当前输入继续推演24小时产量与分配，待专业复核后从最近批准方案恢复。`;
+    return;
+  }
 
   const cards = [
     ["期初可用量", balance.opening, "罐区可调库存"],
     ["预计产氨", plan.nh3, "24小时建议负荷"],
     ["外采到货", balance.purchase, balance.purchase ? "询价预留" : "当前不外采"],
-    ["计划分配", -balance.allocation, "五个消纳去向"],
+    ["计划分配", balance.allocation, "五个消纳去向（流出项）"],
     ["期末可用量", balance.ending, `安全下限 ${balance.floor}t`]
   ];
 
@@ -422,6 +549,11 @@ function renderMassBalance(plan) {
 }
 
 function renderEconomicLedger(plan) {
+  if (safetyStopReason()) {
+    document.getElementById("ledgerRouteTabs").innerHTML = "";
+    document.getElementById("economicLedger").innerHTML = `<article class="ledger-total"><span>安全优先</span><strong>停算</strong><small>硬禁止状态不展示经济排序</small></article>`;
+    return;
+  }
 
   const rows = enterpriseAllocationRows(plan).filter(row => row.name !== "外采液氨");
 
@@ -442,16 +574,25 @@ function renderEconomicLedger(plan) {
 }
 
 function compressorEvidence() {
-
-  const drift = state.compressorDrift;
-
-  return [
-    { label: "轴振动合成值", value: 3.2 + drift * 0.018, unit: "mm/s", reference: "关注线 4.5", ratio: (3.2 + drift * 0.018) / 4.5, trend: `24h +${(drift * 0.006).toFixed(2)}` },
-    { label: "轴位移", value: 46 + drift * 0.22, unit: "μm", reference: "关注线 62", ratio: (46 + drift * 0.22) / 62, trend: `8h +${(drift * 0.08).toFixed(1)}` },
-    { label: "防喘振裕度", value: 24 - drift * 0.11, unit: "%", reference: "下限 15", ratio: (33 - (24 - drift * 0.11)) / 18, trend: `4h -${(drift * 0.035).toFixed(1)}` },
-    { label: "止推轴承温度", value: 72 + drift * 0.05, unit: "℃", reference: "关注线 82", ratio: (72 + drift * 0.05) / 82, trend: `8h +${(drift * 0.018).toFixed(1)}` }
+  const replay = [
+    { time: "08:00", vibration: 3.1, displacement: 45, surge: 25.2, temperature: 72.0, quality: "GOOD" },
+    { time: "08:15", vibration: 3.2, displacement: 44, surge: 24.6, temperature: 72.4, quality: "GOOD" },
+    { time: "08:30", vibration: 3.3, displacement: 46, surge: 24.2, temperature: 72.1, quality: "GOOD" },
+    { time: "08:45", vibration: 3.5, displacement: 49, surge: 22.8, temperature: 73.2, quality: "GOOD" },
+    { time: "09:00", vibration: 3.6, displacement: 48, surge: 22.3, temperature: 74.0, quality: "GOOD" },
+    { time: "09:15", vibration: 3.9, displacement: 54, surge: 19.1, temperature: 76.3, quality: "GOOD" },
+    { time: "09:30", vibration: 4.2, displacement: 58, surge: 16.5, temperature: 78.5, quality: "GOOD" }
   ];
-
+  const index = Math.round(clamp(state.compressorDrift, 0, 100) / 100 * (replay.length - 1));
+  const current = replay[index];
+  const baseline = replay[0];
+  const signed = value => `${value >= 0 ? "+" : ""}${value.toFixed(1)}`;
+  return [
+    { label: "轴振动合成值", value: current.vibration, unit: "mm/s", reference: "关注线 4.5", ratio: current.vibration / 4.5, trend: `较08:00 ${signed(current.vibration - baseline.vibration)}`, sampleTime: current.time, quality: current.quality },
+    { label: "轴位移", value: current.displacement, unit: "μm", reference: "关注线 62", ratio: current.displacement / 62, trend: `较08:00 ${signed(current.displacement - baseline.displacement)}`, sampleTime: current.time, quality: current.quality },
+    { label: "防喘振裕度", value: current.surge, unit: "%", reference: "下限 15", ratio: (33 - current.surge) / 18, trend: `较08:00 ${signed(current.surge - baseline.surge)}`, sampleTime: current.time, quality: current.quality },
+    { label: "止推轴承温度", value: current.temperature, unit: "℃", reference: "关注线 82", ratio: current.temperature / 82, trend: `较08:00 ${signed(current.temperature - baseline.temperature)}`, sampleTime: current.time, quality: current.quality }
+  ];
 }
 
 function renderWeakSignalEvidence() {
@@ -463,7 +604,7 @@ function renderWeakSignalEvidence() {
   document.getElementById("weakSignalState").textContent = `趋势提示：${level}`;
 
   document.getElementById("weakSignalEvidence").innerHTML = evidence.map(item => `
-    <article><div><b>${item.label}</b><span>${item.trend}</span></div><strong>${item.value.toFixed(1)}${item.unit}</strong><div class="signal-track"><i style="width:${clamp(item.ratio * 100, 8, 100)}%"></i></div><small>${item.reference} · 验收样例，待接 SMC/DCS 历史趋势</small></article>
+    <article><div><b>${item.label}</b><span>${item.trend}</span></div><strong>${item.value.toFixed(1)}${item.unit}</strong><div class="signal-track"><i style="width:${clamp(item.ratio * 100, 8, 100)}%"></i></div><small>${item.reference} · 回放 ${item.sampleTime} · 质量码 ${item.quality}</small></article>
   `).join("");
 
 }
@@ -489,6 +630,7 @@ function enterpriseExecutionMonitor(plan) {
   return [
     { label: "方案确认", status: workflowLabels[uiState.workflow], value: requiresSpecialist(plan) ? `班长+专业会签${hardTrigger() ? ` · ${hardTrigger()}` : ""}` : "班长确认，15分钟有效", level: confirmed ? "good" : "pending" },
     { label: "目标负荷", status: `${plan.load}%`, value: "建议值；仅允许写入MES班次计划", level: "good" },
+    { label: "岗位接令", status: `${actionReceiptCount(plan)}/${dispatchActions(plan).length}项`, value: "接令不等于执行；全部接令后进入跟踪", level: actionReceiptCount(plan) === dispatchActions(plan).length ? "good" : "pending" },
     { label: "现场执行反馈", status: actual === null ? "待Historian回传" : `${actual}%`, value: deviation === null ? "未接企业数据，不构造实际值" : `偏差 ${deviation > 0 ? "+" : ""}${deviation}pct`, level: deviation !== null && Math.abs(deviation) > 3 ? "warn" : actual === null ? "pending" : "good" },
     { label: "效果复核", status: uiState.workflow === "reviewed" ? "已完成（演示）" : "待班末", value: "分配贡献、能耗、库存、异常四项归因", level: uiState.workflow === "reviewed" ? "good" : "pending" }
   ];
@@ -496,22 +638,35 @@ function enterpriseExecutionMonitor(plan) {
 }
 
 function renderExecution(plan) {
+  if (decisionBlockReason(plan)) {
+    document.getElementById("executionState").textContent = safetyStopReason() ? "安全闸门锁定" : "可行性门禁未通过";
+    document.getElementById("executionMonitor").innerHTML = [
+      { label: safetyStopReason() ? "停算闸门" : "可行性门禁", value: decisionBlockReason(plan), status: "已锁定", level: "warn" },
+      { label: "最近批准方案", value: "由MES/交接记录读取；验收样例未接入", status: "维持/人工确认", level: "pending" },
+      { label: "现场事实", value: "未接企业Historian，不构造实际负荷", status: "待回传", level: "pending" },
+      { label: "处置路径", value: safetyStopReason() ? "按规程复核测点、设备状态与安环边界" : "调整负荷、去向或外采条件后重算", status: "转人工", level: "warn" },
+      { label: "方案输出", value: safetyStopReason() ? "硬禁止状态不参与经济比较" : "冲突约束未消解前不得推荐", status: "冻结", level: "pending" }
+    ].map((row, index) => `<article class="${row.level}"><i>${index + 1}</i><div><b>${row.label}</b><span>${row.value}</span></div><strong>${row.status}</strong></article>`).join("");
+    return;
+  }
   const rows = enterpriseExecutionMonitor(plan);
-  document.getElementById("executionState").textContent = rows[0].status;
+  document.getElementById("executionState").textContent = safetyStopReason() ? "安全闸门锁定" : rows[0].status;
   document.getElementById("executionMonitor").innerHTML = rows.map((row, index) => `
     <article class="${row.level}"><i>${index + 1}</i><div><b>${row.label}</b><span>${row.value}</span></div><strong>${row.status}</strong></article>
   `).join("");
 }
 
-function updateWorkflowControls() {
+function updateWorkflowControls(plan) {
 
-  document.getElementById("recommendationPhase").textContent = workflowLabels[uiState.workflow];
+  document.getElementById("recommendationPhase").textContent = decisionBlockReason(plan) ? (safetyStopReason() ? "停止生成新建议" : "无可执行方案") : workflowLabels[uiState.workflow];
 
   const sequence = { submit: 0, approve: 1, track: 2, review: 3 };
   const current = { draft: -1, pending: 0, approved: 1, tracking: 2, reviewed: 3 }[uiState.workflow];
 
   document.querySelectorAll("[data-workflow]").forEach(button => {
-    button.disabled = sequence[button.dataset.workflow] > current + 1 || sequence[button.dataset.workflow] <= current;
+    const outsideSequence = sequence[button.dataset.workflow] > current + 1 || sequence[button.dataset.workflow] <= current;
+    const waitingForReceipts = button.dataset.workflow === "track" && actionReceiptCount(plan) < dispatchActions(plan).length;
+    button.disabled = Boolean(decisionBlockReason(plan)) || outsideSequence || waitingForReceipts;
   });
 
 }
@@ -564,6 +719,10 @@ function structuredAiAnswer(question, plan) {
 }
 
 function renderAiAnswer(plan) {
+  if (decisionBlockReason(plan)) {
+    document.getElementById("aiAnswer").innerHTML = `<strong>${safetyStopReason() ? "停止生成新的调度建议，转现场规程与专业处置。" : "当前规则方案不可执行，先消解冲突约束。"}</strong><dl><div><dt>依据</dt><dd>${decisionBlockReason(plan)}</dd></div><div><dt>边界</dt><dd>不生成审批或跨装置动作，不把不可行结果标成优选方案。</dd></div><div><dt>下一步</dt><dd>${safetyStopReason() ? "核对原始测点、最近批准方案和设备状态，记录专业结论。" : "调整合成负荷、下游去向、外售或外采条件后重算。"}</dd></div><div><dt>责任岗位</dt><dd>${safetyStopReason() ? "当班班长 + 设备 + 工艺 + 安环" : "生产调度 + 运营 + 罐区"}</dd></div></dl>`;
+    return;
+  }
   const answer = structuredAiAnswer(document.getElementById("aiAnswer").dataset.question, plan);
   document.getElementById("aiAnswer").innerHTML = `
     <strong>${answer.conclusion}</strong>
@@ -594,7 +753,7 @@ function feishu(plan, text) {
 }
 
 function feishuContract(plan, text) {
-  const riskPath = requiresSpecialist(plan) ? "班长确认 → 设备专业/调度主管会签" : "班长确认";
+  const riskPath = requiresSpecialist(plan) ? "班长确认 → 相关专业/调度主管会签" : "班长确认";
   return {
     card: {
       target_chat: "合成氨当班调度群",
@@ -602,14 +761,14 @@ function feishuContract(plan, text) {
       buttons: ["采纳并发起审批", "要求复核", "驳回并填写原因"],
       fields: {
         target_load_percent: plan.load,
-        risk_index: plan.risk,
+        professional_review_reason: professionalReviewReason() || "无",
         evidence_completeness: `${evidenceCompleteness()}/8`,
         approval_path: riskPath
       }
     },
     approval: {
       definition: "ammonia_load_adjustment",
-      form_fields: ["班次", "目标负荷", "约束解释", "风险等级", "预计收益", "回写范围"],
+      form_fields: ["班次", "目标负荷", "约束解释", "专业复核原因", "分配贡献口径", "回写范围"],
       write_back_after_approved: ["MES班次计划", "交接班摘要", "飞书多维表格复盘"]
     },
     base_record: {
@@ -619,15 +778,15 @@ function feishuContract(plan, text) {
         shift_id: "NH3-20260804-D",
         scenario: text.mode,
         target_load: `${plan.load}%`,
-        expected_margin: `${plan.margin}%`,
-        risk_index: plan.risk
+        relative_external_sale_contribution_cny_24h: Math.round(massBalance(plan).contributionWan * 10000),
+        professional_review_reason: professionalReviewReason() || "无"
       }
     },
     task: {
       title: "跟踪负荷调整执行效果",
       owners: ["调度员", "班长", "设备工程师"],
       due: "本班结束前",
-      checklist: ["确认DCS historian实际负荷", "记录未采纳原因", "班后复盘收益归因"]
+      checklist: ["责任岗位逐项接令", "确认DCS historian实际负荷", "记录未采纳原因", "班后复盘收益归因"]
     },
     callback: {
       events: ["im.message.receive_v1", "card.action.trigger", "approval.instance.status_changed", "bitable.record.changed"],
@@ -664,14 +823,14 @@ function knowledge(plan) {
     { title: "全线事实表", body: "把MES、IoT、DCS、APC、压机、热电和行情数据汇成调度长同屏口径。", level: "good" },
     { title: "调度长经验库", body: `输入快照、目标负荷 ${plan.load}%、审批人、采纳状态、实际偏差和班长判断进入统一记录。`, level: "good" },
     { title: "新人训练样本", body: "把安全边界、设备风险、订单变化、数据不可信和经验判断结构化，供新调度员按场景学习。", level: "warn" },
-    { title: "周度校准", body: "高风险、高偏差、高价值样本进入模型校准和专家规则修订队列。", level: "good" }
+    { title: "周度校准", body: "高偏差、典型异常和高价值样本先进入案例审核；经历史回放和专业会签后才可晋级规则。", level: "good" }
   ];
 }
 
 function roleViews(plan) {
   return [
     { title: "调度员", body: "看三案差异、订单优先级、库存影响和能耗收益。", level: "good" },
-    { title: "班长", body: `确认目标负荷 ${plan.load}%、风险 ${plan.risk} 和交接摘要。`, level: plan.risk > 55 ? "warn" : "good" },
+    { title: "班长", body: `确认目标负荷 ${plan.load}%、明确复核原因和交接摘要。`, level: requiresSpecialist(plan) ? "warn" : "good" },
     { title: "设备", body: "关注压缩机、合成塔、换热器和点检窗口。", level: state.health < 68 ? "warn" : "good" },
     { title: "安环", body: "确认罐区压力、安全库存、重大危险源和环保指标。", level: "good" }
   ];
@@ -679,6 +838,12 @@ function roleViews(plan) {
 
 function effectiveRoleViews(plan) {
   const market = activeMarket();
+  if (decisionBlockReason(plan)) {
+    return [
+      { title: "当前任务", body: `${decisionBlockReason(plan)}；停止生成新目标，核对输入事实和最近批准方案。`, level: safetyStopReason() ? "danger" : "warn" },
+      { title: "协同要求", body: safetyStopReason() ? "通知当班班长、设备、工艺和安环岗位，按现场规程记录处置和复核结论。" : "由调度重新调整负荷、液氨去向或外采条件，消解冲突约束后再提交。", level: "warn" }
+    ];
+  }
   const profiles = {
     dispatcher: [
       { title: "本班要做", body: `核对 V${market.version} 行情、刚性订单与罐区可用量，比较三案后提交 ${plan.load}% 目标负荷建议。`, level: "good" },
@@ -702,7 +867,7 @@ function effectiveRoleViews(plan) {
 
 function decisionRules(plan) {
   const continuityRisk = state.demand > 84 || state.inventory < 45 || state.energy > 78;
-  const equipmentRisk = state.health < 62 || plan.risk > 62;
+  const equipmentRisk = Boolean(professionalReviewReason()) || Boolean(safetyStopReason());
   return [
     {
       title: "第一优先级：安全",
@@ -732,11 +897,32 @@ function dataInterfaces() {
   ];
 }
 
-function renderList(id, items) {
+function interfaceFieldRows() {
+  return [
+    ["ERP", "订单数量 / 交期 / 行情净价", "只读", "变更/每日", "业务生效时间 + 运营确认", "运营管理", "沿用上一有效版本并转人工"],
+    ["MES", "原班次计划 / 执行偏差", "先读后审批准写", "班次/小时", "计划生效时间 + 审批状态", "生产调度", "保留人工基线，不覆盖"],
+    ["DCS Historian", "实际负荷 / 罐存 / 床层温升", "只读", "5分钟", "源时间戳 + 质量码", "装置主操", "超15分钟停算，实际值留空"],
+    ["热电 APC", "蒸汽、电力、公辅约束余量", "只读", "5分钟", "约束快照 + 有效期", "公辅调度", "转公辅人工复核"],
+    ["SMC / 机组", "振动 / 轴位移 / 防喘振裕度", "只读", "1分钟", "同工况基线 + 测点质量", "设备专业", "转专业复核或锁定新建议"],
+    ["飞书审批", "确认人 / 意见 / 状态 / 时间", "读写", "事件", "签名校验 + 幂等键", "当班班长", "重试后进入人工对账"],
+    ["飞书 Base", "班末事实 / 未采纳原因 / 复盘结论", "审批后写", "事件", "必填字段完整", "生产调度", "保存草稿，禁止补造事实"]
+  ];
+}
+
+function renderInterfaceFieldMatrix() {
+  document.getElementById("interfaceFieldMatrix").innerHTML = interfaceFieldRows().map(row => `<tr>${row.map((cell, index) => `<td>${index === 0 ? `<b>${cell}</b>` : cell}</td>`).join("")}</tr>`).join("");
+}
+
+function renderList(id, items) {
   document.getElementById(id).innerHTML = items.map(item => `<article class="${item.level || ""}"><b>${item.title}</b><span>${item.body}</span>${item.tag ? `<em class="tag">${item.tag}</em>` : ""}</article>`).join("");
 }
 
-function renderScenarioCards(plan) {
+function renderScenarioCards(plan) {
+  if (decisionBlockReason(plan)) {
+    document.getElementById("bestPlan").textContent = "无可执行方案";
+    document.getElementById("scenarioCards").innerHTML = `<article class="scenario"><b>${safetyStopReason() ? "安全闸门锁定" : "可行性门禁未通过"}</b><p>${decisionBlockReason(plan)}。当前规则方案不得进入审批或动作派发。</p><div class="mini-kpis"><span>新目标 --</span><span>${safetyStopReason() ? "经济排序冻结" : "冲突约束待消解"}</span><span>转人工重算</span></div></article>`;
+    return;
+  }
   const compare = scenarios(plan);
   document.getElementById("bestPlan").textContent = `优选：${compare.best}`;
   document.getElementById("scenarioCards").innerHTML = compare.list.map(item => `
@@ -746,7 +932,7 @@ function renderScenarioCards(plan) {
       <div class="mini-kpis">
         <span>负荷 ${item.load}%</span>
         <span>经济比较值 ${item.margin}</span>
-        <span>复核分 ${item.risk}</span>
+        <span>${item.id === "护机" ? "设备优先复核" : "常规约束复核"}</span>
       </div>
     </article>
   `).join("");
@@ -864,7 +1050,8 @@ function openIncident(index) {
 
 function openApproval(plan) {
   const specialist = requiresSpecialist(plan);
-  document.getElementById("approvalReason").textContent = specialist ? (hardTrigger() || `综合复核分 ${plan.risk}，需专业会签`) : "未触发专业会签线，班长确认后可进入执行跟踪。";
+  document.getElementById("approvalReason").textContent = specialist ? professionalReviewReason() : "未触发专业会签条件，班长确认后由责任岗位逐项接令。";
+  document.getElementById("specialistSignText").textContent = `${professionalReviewReason() || "相关专业复核"}，会签意见已记录`;
   document.getElementById("specialistSignRow").hidden = !specialist;
   document.getElementById("leaderSign").checked = false;
   document.getElementById("specialistSign").checked = false;
@@ -886,16 +1073,20 @@ function render() {
   document.getElementById("modeLabel").textContent = text.mode;
   document.getElementById("strategyTitle").textContent = text.title;
   document.getElementById("strategyText").textContent = text.text;
-  document.getElementById("loadKpi").textContent = `${plan.load}%`;
-  document.getElementById("nh3Kpi").textContent = `${plan.nh3.toLocaleString()}t`;
-  document.getElementById("marginKpi").textContent = `${balance.contributionWan >= 0 ? "+" : ""}${balance.contributionWan.toFixed(1)}万`;
+  const decisionBlocked = Boolean(decisionBlockReason(plan));
+  document.getElementById("loadKpi").textContent = decisionBlocked ? "--" : `${plan.load}%`;
+  document.getElementById("nh3Kpi").textContent = decisionBlocked ? "--" : `${plan.nh3.toLocaleString()}t`;
+  document.getElementById("marginKpi").textContent = decisionBlocked ? "--" : `${balance.contributionWan >= 0 ? "+" : ""}${balance.contributionWan.toFixed(1)}万`;
   const constraintRows = constraints(plan);
   const hardCount = constraintRows.filter(item => item.level === "danger").length;
   const reviewCount = constraintRows.filter(item => item.level === "warn").length;
   document.getElementById("riskKpi").textContent = `${hardCount}项越界`;
   document.getElementById("riskKpiNote").textContent = `${reviewCount}项待复核`;
   document.getElementById("dataCompleteness").textContent = `验收样例字段 ${evidenceCompleteness()}/8 · 企业接口待联调`;
-  document.getElementById("operatorNote").textContent = `当前建议：${text.mode}；状态：${workflowLabels[uiState.workflow]}；确认路径：${requiresSpecialist(plan) ? "班长+专业会签" : "班长确认"}；只允许写入MES计划、交接摘要和复盘记录。`;
+  document.getElementById("operatorNote").textContent = decisionBlocked
+    ? `当前状态：${safetyStopReason() ? "安全闸门锁定" : "可行性门禁未通过"}；原因：${decisionBlockReason(plan)}；停止生成新建议并转人工处理。`
+    : `当前建议：${text.mode}；状态：${workflowLabels[uiState.workflow]}；确认路径：${requiresSpecialist(plan) ? `班长+专业会签（${professionalReviewReason()}）` : "班长确认"}；岗位接令 ${actionReceiptCount(plan)}/${dispatchActions(plan).length}；只允许写入MES计划、交接摘要和复盘记录。`;
+  document.querySelector('[data-action="approval"]').disabled = decisionBlocked;
   document.getElementById("constraintCount").textContent = `${constraintRows.length}项`;
   document.getElementById("modelTrust").textContent = `证据 ${evidenceCompleteness()}/8`;
 
@@ -918,12 +1109,14 @@ function render() {
 
   renderWeakSignalEvidence();
   renderScenarioCards(plan);
-  renderList("interfaceMap", interfaceMap(plan));
+  renderList("interfaceMap", interfaceMap(plan));
+  renderInterfaceFieldMatrix();
   renderList("modelCards", models(plan));
-  renderGantt(schedule(plan));
+  renderGantt(schedule(plan));
+  renderDispatchActions(plan);
   renderExecution(plan);
 
-  updateWorkflowControls();
+  updateWorkflowControls(plan);
   renderList("constraints", constraintRows);
   renderList("benefitTrace", benefitTrace(plan));
   document.getElementById("feishuPreview").innerHTML = feishu(plan, text);
@@ -984,6 +1177,7 @@ document.querySelectorAll("input[type='range']").forEach(input => {
 
     uiState.workflow = "draft";
     uiState.actualLoad = null;
+    uiState.actionAcks = {};
     uiState.generatedAt = new Date();
     uiState.recommendationVersion += 1;
     render();
@@ -997,6 +1191,7 @@ document.querySelectorAll("[data-preset]").forEach(button => {
 
     uiState.workflow = "draft";
     uiState.actualLoad = null;
+    uiState.actionAcks = {};
     uiState.generatedAt = new Date();
     uiState.recommendationVersion += 1;
     Object.keys(state).forEach(key => {
@@ -1015,6 +1210,7 @@ document.querySelectorAll("[data-action]").forEach(button => {
     if (action === "recalc") {
       uiState.workflow = "draft";
       uiState.actualLoad = null;
+      uiState.actionAcks = {};
       uiState.generatedAt = new Date();
       uiState.recommendationVersion += 1;
     }
@@ -1046,8 +1242,16 @@ document.getElementById("eventQueue").addEventListener("click", event => {
   const button = event.target.closest("[data-event-index]");
   if (!button) return;
   openIncident(Number(button.dataset.eventIndex));
-  return;
-  // The dialog records acknowledgement or creates a Feishu task draft.
+});
+
+document.getElementById("actionSheet").addEventListener("change", event => {
+  const input = event.target.closest("[data-action-ack]");
+  if (!input) return;
+  uiState.actionAcks[input.dataset.actionAck] = input.checked;
+  const row = dispatchActions(calc()).find(item => item.id === input.dataset.actionAck);
+  events.unshift({ title: `${row.unit}｜${input.checked ? "已接令" : "撤回接令"}`, body: `${row.owner}状态已记录；该记录不代表现场已经执行。` });
+  if (events.length > 6) events.pop();
+  render();
 });
 
 document.getElementById("confirmMarket").addEventListener("click", () => {
@@ -1060,6 +1264,7 @@ document.getElementById("confirmMarket").addEventListener("click", () => {
   uiState.marketConfirmed = true;
   uiState.workflow = "draft";
   uiState.actualLoad = null;
+  uiState.actionAcks = {};
   uiState.generatedAt = new Date();
   uiState.recommendationVersion += 1;
   pushEvent("recalc", calc(), strategy(calc()));

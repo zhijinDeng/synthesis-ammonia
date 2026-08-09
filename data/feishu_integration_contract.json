@@ -53,14 +53,21 @@
         "approval_path",
         "accepted",
         "reject_reason",
+        "action_order_version",
+        "synthesis_ack_status",
+        "nitric_ack_status",
+        "tank_dispatch_ack_status",
+        "utility_ack_status",
+        "all_actions_acknowledged_at",
         "actual_load_percent",
         "actual_margin_percent",
         "operator_note"
-      ]
+      ],
+      "knowledge_governance_fields": ["root_cause", "applicable_operating_window", "professional_review", "rule_stage", "replay_result", "withdrawn_rule_version"]
     },
     "task": {
       "title": "跟踪负荷调整执行效果",
-      "checklist": ["确认DCS historian实际负荷", "记录未采纳原因", "班后复盘收益归因"],
+      "checklist": ["责任岗位逐项接令", "确认DCS historian实际负荷", "记录未采纳原因", "班后复盘收益归因"],
       "verification_task": "https://applink.feishu.cn/client/todo/detail?guid=44631b59-b834-47b1-a413-b751f2f291da&suite_entity_num=t136777",
       "production_task_status": "create_only_after_approved_instance"
     },
@@ -80,7 +87,9 @@
   "operator_cockpit": {
     "event_priorities": ["P1", "P2", "P3"],
     "allocation_decisions": ["保", "稳", "降", "限", "停", "询价外采"],
-    "execution_checks": ["班长确认", "MES目标负荷", "现场执行反馈", "班末效果复核"],
+    "execution_checks": ["班长确认", "跨装置动作单", "责任岗位接令", "MES目标负荷", "现场执行反馈", "班末效果复核"],
+    "action_receipt_rule": "岗位接令只证明已看到并复核动作；全部接令后方可进入执行跟踪，实际执行仍以Historian或MES回传为准",
+    "feasibility_gate": "24小时物料平衡低于安全库存或高于罐区上限时标记无可执行方案，禁止审批和动作派发",
     "stale_data_threshold_minutes": 15,
     "execution_feedback_rule": "historian_not_connected_means_pending_never_synthetic_actual"
   },
@@ -89,9 +98,23 @@
     "writeback": ["MES班次计划摘要", "飞书交接摘要", "飞书复盘记录"],
     "excluded": ["DCS控制参数", "SIS参数", "自动开停车", "未授权跨系统写入"]
   },
+  "knowledge_governance": {
+    "states": ["raw_shift_fact", "pending_case_review", "confirmed_case", "candidate_rule", "historical_replay", "professional_cosign", "production_rule", "disabled_or_withdrawn"],
+    "promotion_guard": "单班成功不得自动改变生产规则；生产、工艺或设备、安环按场景完成专业会签后方可晋级",
+    "withdrawal_guard": "连续偏差、适用工况越界、数据漂移或专业否决时停用规则并保留版本和原因"
+  },
   "acceptance_90_days": {
     "minimum_valid_shifts": 30,
     "required_scenarios": ["产供销重排", "公辅波动吸收", "设备趋势复核"],
-    "gates": ["安全硬约束零突破", "建议可复算率100%", "未接Historian时实际值为空", "收益仅在同口径原计划对照后归因"]
+    "gates": ["安全硬约束零突破", "建议可复算率100%", "未接Historian时实际值为空", "收益仅在同口径原计划对照后归因"],
+    "metric_definition_draft": {
+      "source_data_availability": ">=98% within declared pilot windows",
+      "mass_balance_residual": "<=1.5% per valid shift after inventory calibration",
+      "recommendation_recompute_p95": "<=120 seconds for read-only pilot snapshots",
+      "decision_time_reduction": ">=30% median versus registered manual baseline",
+      "high_priority_order_fulfillment": "not lower than matched manual baseline",
+      "load_reversal_count": "not higher than matched manual baseline",
+      "known_event_replay": "report detection lead time, false positives and misses separately; no composite score"
+    }
   }
 }

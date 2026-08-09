@@ -47,7 +47,7 @@
 
       <button data-workspace="system" type="button">依据与接入</button>
 
-      <span>验收样例 · 非企业实时数据</span>
+      <span>规则驱动验收沙盘 · 非在线优化器 · 非企业实时数据</span>
 
     </nav>
 
@@ -88,7 +88,7 @@
           <ul class="compact-list">
             <li>不直接写DCS/SIS控制参数</li>
             <li>不自动开停车，不绕过审批链</li>
-            <li>先旁路回放，再做低风险执行验证</li>
+              <li>先旁路回放，再做条件受控执行验证</li>
             <li>数据低可信时降级人工流程</li>
           </ul>
         </section>
@@ -172,7 +172,7 @@
         </section>
 
         <section class="panel">
-          <div class="panel-title"><span>三案比选</span><strong id="bestPlan">优选：稳氨</strong></div>
+          <div class="panel-title"><span>规则方案比选</span><strong id="bestPlan">优选：稳氨</strong></div>
           <div id="scenarioCards" class="scenario-cards"></div>
         </section>
 
@@ -182,6 +182,14 @@
             <div id="interfaceMap" class="interface-map"></div>
 
             <img class="process-map" src="assets/process-map.svg" alt="合成氨至下游产品协同流程图" />
+            <div class="subpanel-title"><span>首批接口字段矩阵</span><strong>唯一事实源 / 超时降级</strong></div>
+            <div class="table-scroll">
+              <table class="dispatch-table interface-field-table">
+                <thead><tr><th>事实源</th><th>业务字段</th><th>方向</th><th>更新</th><th>质量与时间戳</th><th>责任岗位</th><th>失败处理</th></tr></thead>
+                <tbody id="interfaceFieldMatrix"></tbody>
+              </table>
+            </div>
+            <p class="data-caption">字段清单用于接口联调会，不代表当前已经连接企业生产网络；完整样例见 data/interface_field_matrix.csv。</p>
           </section>
           <section class="panel">
             <div class="panel-title"><span>方案依据与适用范围</span><strong id="modelTrust">候选校准方法</strong></div>
@@ -191,7 +199,19 @@
 
         <section class="panel">
           <div class="panel-title"><span>班次排产草案</span><strong id="shiftSummary">24h滚动</strong></div>
-          <div id="gantt" class="gantt"></div>
+          <div id="gantt" class="gantt"></div>
+
+        </section>
+
+        <section class="panel" data-view="overview supply execution">
+          <div class="panel-title"><span>跨装置调度动作单</span><strong id="actionReceiptState">待方案确认</strong></div>
+          <div class="table-scroll">
+            <table class="dispatch-table action-table">
+              <thead><tr><th>责任单元</th><th>当前事实</th><th>调整建议</th><th>节奏/时限</th><th>责任岗位</th><th>执行前置条件</th><th>接令</th></tr></thead>
+              <tbody id="actionSheet"></tbody>
+            </table>
+          </div>
+          <p class="data-caption">接令只表示责任岗位已看到并复核动作，不表示现场已经执行。实际负荷、阀位和装置状态必须由Historian或MES回传。</p>
         </section>
 
         <section class="panel">
@@ -306,7 +326,7 @@
       <form method="dialog">
         <header><span class="severity">会签</span><div><h2 id="approvalTitle">记录方案确认</h2><p id="approvalReason"></p></div><button class="icon-close" value="cancel" aria-label="关闭">×</button></header>
         <label class="check-row"><input id="leaderSign" type="checkbox" />班长已核对目标负荷、有效期和回滚条件</label>
-        <label class="check-row" id="specialistSignRow"><input id="specialistSign" type="checkbox" />设备专业或调度主管已核对硬触发项</label>
+        <label class="check-row" id="specialistSignRow"><input id="specialistSign" type="checkbox" /><span id="specialistSignText">相关专业或调度主管已核对复核项</span></label>
         <label class="field-row">确认意见<textarea id="approvalNote" rows="3" placeholder="填写采纳依据、保留意见或附加条件"></textarea></label>
         <p class="dialog-boundary">确认只改变演练状态并生成审计记录，不代表企业真实审批。</p>
         <footer><button value="cancel">返回</button><button class="primary" id="submitApproval" type="button">记录确认</button></footer>

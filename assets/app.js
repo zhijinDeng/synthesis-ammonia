@@ -350,6 +350,82 @@ function actionReceiptCount(plan) {
   return rows.filter(row => uiState.actionAcks[row.id]).length;
 }
 
+function exportEvidencePackage(plan, text) {
+  const now = new Date();
+  const blocked = decisionBlockReason(plan);
+  const safetyReason = safetyStopReason();
+  const actions = dispatchActions(plan);
+  const packageData = {
+    package_version: "ammonia-dispatch-evidence-v1",
+    exported_at: now.toISOString(),
+    environment: "acceptance_demo",
+    source_mode: "scenario_sample",
+    shift_id: "NH3-20260804-D",
+    recommendation_id: `NH3-D01-${String(uiState.recommendationVersion).padStart(3, "0")}`,
+    workflow: uiState.workflow,
+    execution_status: blocked ? "blocked" : uiState.workflow,
+    input_snapshot: {
+      state: { ...state },
+      selected_route: uiState.selectedRoute,
+      generated_at: uiState.generatedAt.toISOString(),
+      execution_price: { ...activeMarket() },
+      official_references: uiState.officialMarket
+    },
+    source_lineage: {
+      execution_price: "uiState.confirmedMarket; enterprise ERP/经营确认 required",
+      public_references: "uiState.officialMarket.sources",
+      scenario_inputs: "local interactive sample; replace with approved read-only facts in pilot"
+    },
+    decision: {
+      mode: text.mode,
+      title: text.title,
+      rationale: text.text,
+      target_load_percent: plan.load,
+      recommendation_version: uiState.recommendationVersion,
+      rule_version: "dispatch-rules-v3",
+      safety_gate: { passed: !safetyReason, reason: safetyReason || "passed" },
+      feasibility_gate: { passed: !blocked, reason: blocked || "passed" },
+      professional_review: professionalReviewReason() || "none",
+      approval_path: requiresSpecialist(plan) ? "班长确认 -> 相关专业/调度主管会签" : "班长确认"
+    },
+    material_balance: massBalance(plan),
+    action_sheet: actions,
+    execution: {
+      acknowledged: actionReceiptCount(plan),
+      total: actions.length,
+      ack_state: { ...uiState.actionAcks },
+      actual_load_percent: uiState.actualLoad,
+      historian_status: "not_connected_demo"
+    },
+    feishu_handover: {
+      card: "draft_only",
+      approval: "draft_only",
+      task: "create_after_approval",
+      bitable: "local_export_only",
+      write_boundary: "No DCS/SIS write; enterprise deployment writes MES plan summary and Feishu review record only after approval."
+    },
+    evidence: {
+      completeness: `${evidenceCompleteness()}/8`,
+      required: ["input_snapshot", "decision_gates", "material_balance", "action_sheet", "ack_state", "source_lineage"],
+      actual_value_policy: "Actual load, inventory, energy and benefit remain empty until Historian or an approved enterprise fact source returns them."
+    },
+    audit: {
+      generated_at: now.toISOString(),
+      event_tail: events.slice(0, 6),
+      no_dcs_sis_write: true
+    }
+  };
+  const blob = new Blob([JSON.stringify(packageData, null, 2)], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `ammonia-dispatch-evidence-${now.toISOString().replace(/[.:]/g, "-")}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function renderDispatchActions(plan) {
   const rows = dispatchActions(plan);
   if (decisionBlockReason(plan)) {
@@ -1057,6 +1133,7 @@ function pushEvent(kind, plan, text) {
     card: "已生成飞书互动卡片草稿",
     approval: "已生成负荷调整审批草稿",
     bitable: "已保存本地复盘草稿",
+    export: "已导出当前方案证据包",
     task: "已生成本地任务草稿",
     review: "已保存本地复盘草稿",
     submit: "审批草稿进入待确认（演示）",
@@ -1068,6 +1145,7 @@ function pushEvent(kind, plan, text) {
     card: `卡片字段草稿已生成，尚未发送；包含负荷、风险、约束和确认按钮。`,
     approval: `审批通过后只写MES计划、交接摘要和复盘记录，不写DCS/SIS。`,
     bitable: `本地草稿包含采纳状态、未采纳原因、执行偏差和班长备注，尚未写入多维表格。`,
+    export: `已下载JSON证据包；包含输入快照、门禁状态、物料平衡、动作单、接令状态、来源和版本信息。`,
     task: `责任人、检查项和班末复核要求已生成本地草稿；项目中的真实验收任务另有直达链接。`,
     review: `当前输入、判断依据、采纳状态和效果指标已进入复盘草稿。`,
     submit: `建议仍未写入生产系统，等待班长按验收状态机确认。`,
@@ -1281,6 +1359,7 @@ document.querySelectorAll("[data-action]").forEach(button => {
       uiState.generatedAt = new Date();
       uiState.recommendationVersion += 1;
     }
+    if (action === "export") exportEvidencePackage(plan, text);
     pushEvent(action, plan, text);
     render();
   });

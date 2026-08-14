@@ -21,6 +21,7 @@
 - 接口字段矩阵：逐字段列明唯一事实源、读写方向、频率、质量码、责任岗位和超时处理。
 - 飞书已验证链路：在线方案稿、飞书多维表格样例库、Task v2任务清单和验收任务`t136777`。
 - 飞书演示原型：互动卡片、负荷调整审批状态机和事件回传字段契约。
+- 方案证据包：可从当班工作区下载 JSON，包含输入快照、行情来源、门禁结论、24小时平衡、跨装置动作单、接令状态、飞书流转边界和审计事件；未接入企业事实源时实际值保持为空。
 - 待企业授权：目标群机器人、审批定义、Aily知识源、事件订阅及MES和生产历史数据库接口。
 
 ## 试点范围
@@ -82,3 +83,7 @@ python -m http.server 4173
 The platform separates public references from enterprise execution prices. National Bureau of Statistics production-material prices, Zhengzhou Commodity Exchange UR/SA data, and Ministry of Commerce commodity-price articles are reference or cross-check sources only. Liquid-ammonia and downstream-product prices used for dispatch economics must come from the enterprise ERP, sales quotation, or procurement settlement version.
 
 `data/market_source_registry.json` records source, refresh cadence, URL, authority, and fallback rules. `scripts/market_gateway_server.mjs` is a local adapter on port `4174`; it exposes `/health` and `/api/market/snapshot`, returns auditable reference cards, and never writes DCS/SIS. The page action “联网读取官方参考” updates references only. An unconfirmed, stale, or incomplete price freezes the execution price and economic ranking until a business owner confirms product, region, unit, tax/freight basis, effective time, person, and version.
+
+## Evidence package export
+
+The action “导出当前方案证据包” downloads a local JSON handover artifact validated by `data/evidence_package_schema.json`. It records the scenario snapshot, execution-price version, safety and feasibility gates, material balance, cross-unit action sheet, Feishu handover state, and audit tail. The export is deliberately separate from platform write-back: it does not send data to Feishu, MES, DCS, or SIS. In a pilot, the same contract can be mapped to a Feishu Base review record and an MES plan summary after the approval callback returns; actual load, inventory, energy, and benefit remain blank until an approved Historian or enterprise fact source supplies them.

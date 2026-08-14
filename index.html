@@ -83,8 +83,11 @@
             <button data-action="card" type="button">生成卡片草稿</button>
             <button data-action="approval" type="button">生成审批草稿</button>
             <button data-action="bitable" type="button">保存复盘草稿</button>
+            <button data-action="export" type="button">导出当前方案证据包</button>
           </div>
-          <div id="operatorNote" class="note"></div>
+          <p class="data-caption">证据包为本地 JSON 文件，包含输入、门禁、动作单和版本信息；不代表已写入飞书、MES 或现场控制系统。</p>
+
+          <div id="operatorNote" class="note"></div>
           <div id="eventLog" class="log" aria-live="polite"></div>
         </section>
 

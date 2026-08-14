@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zhijinDeng/synthesis-ammonia/blob/main/data/evidence_package_schema.json",
+  "title": "Ammonia dispatch evidence package",
+  "type": "object",
+  "required": [
+    "package_version",
+    "exported_at",
+    "shift_id",
+    "recommendation_id",
+    "input_snapshot",
+    "source_lineage",
+    "decision",
+    "material_balance",
+    "action_sheet",
+    "execution",
+    "evidence",
+    "audit"
+  ],
+  "properties": {
+    "package_version": { "type": "string" },
+    "exported_at": { "type": "string", "format": "date-time" },
+    "environment": { "type": "string", "enum": ["acceptance_demo", "pilot", "production"] },
+    "source_mode": { "type": "string", "enum": ["scenario_sample", "enterprise_readonly", "enterprise_verified"] },
+    "shift_id": { "type": "string", "minLength": 1 },
+    "recommendation_id": { "type": "string", "minLength": 1 },
+    "workflow": { "type": "string" },
+    "execution_status": { "type": "string" },
+    "input_snapshot": { "type": "object", "required": ["state", "execution_price", "official_references"] },
+    "source_lineage": { "type": "object", "required": ["execution_price", "public_references", "scenario_inputs"] },
+    "decision": {
+      "type": "object",
+      "required": ["mode", "target_load_percent", "safety_gate", "feasibility_gate", "professional_review"]
+    },
+    "material_balance": { "type": "object" },
+    "action_sheet": { "type": "array", "items": { "type": "object" } },
+    "execution": {
+      "type": "object",
+      "required": ["acknowledged", "total", "ack_state", "actual_load_percent", "historian_status"]
+    },
+    "evidence": { "type": "object", "required": ["completeness", "required", "actual_value_policy"] },
+    "audit": { "type": "object", "required": ["generated_at", "event_tail", "no_dcs_sis_write"] }
+  }
+}

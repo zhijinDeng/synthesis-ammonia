@@ -77,3 +77,8 @@ python -m http.server 4173
 - Task v2验收任务`t136777`：`https://applink.feishu.cn/client/todo/detail?guid=44631b59-b834-47b1-a413-b751f2f291da&suite_entity_num=t136777`
 
 企业接入还需要自建应用权限、目标群机器人范围、审批定义`approval_code`、Aily知识源、事件订阅与回调配置。App Secret只存放在服务端凭据配置中，不进入前端、文档或Git历史。
+## Pricing and execution-price boundary
+
+The platform separates public references from enterprise execution prices. National Bureau of Statistics production-material prices, Zhengzhou Commodity Exchange UR/SA data, and Ministry of Commerce commodity-price articles are reference or cross-check sources only. Liquid-ammonia and downstream-product prices used for dispatch economics must come from the enterprise ERP, sales quotation, or procurement settlement version.
+
+`data/market_source_registry.json` records source, refresh cadence, URL, authority, and fallback rules. `scripts/market_gateway_server.mjs` is a local adapter on port `4174`; it exposes `/health` and `/api/market/snapshot`, returns auditable reference cards, and never writes DCS/SIS. The page action “联网读取官方参考” updates references only. An unconfirmed, stale, or incomplete price freezes the execution price and economic ranking until a business owner confirms product, region, unit, tax/freight basis, effective time, person, and version.

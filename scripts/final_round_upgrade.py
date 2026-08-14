@@ -619,6 +619,19 @@ def build_solution_doc():
     add_dispatch_action_order(doc, "14. 跨装置调度动作单")
     doc.add_heading("15. 试点验收口径", level=1)
     table(doc, ["验收项", "口径", "判定"], ACCEPTANCE_ROWS, [1.05, 4.35, 1.0])
+    doc.add_heading("Market source and execution-price gate", level=2)
+    table(
+        doc,
+        ["Source", "Use", "Execution authority"],
+        [
+            ["NBS production materials", "Public benchmark; ten-day publication", "No"],
+            ["CZCE UR/SA", "Authorized futures trend reference", "No"],
+            ["MOFCOM commodity price", "Periodic industry cross-check", "No"],
+            ["Yuntu ERP / settlement", "Product, region, tax and freight aligned business price", "Yes after confirmation"],
+        ],
+        [2.0, 3.2, 1.2],
+    )
+    para(doc, "Public reference refresh only updates evidence cards. An unconfirmed or stale price cannot enter a new executable plan or economic ranking; the last valid enterprise version is retained and the business owner is notified.")
     add_references(doc, [1, 2, 4, 5, 6, 9, 10, 11, 12, 13, 14])
     return save(doc, "02_整体解决方案书.docx")
 
@@ -943,6 +956,19 @@ def build_final_doc():
         "附录C：飞书真实接入需企业自建应用、审批定义、多维表格权限和事件回调配置。",
     ])
     add_references(doc, [1, 2, 4, 5, 6, 9, 10, 11, 12, 13, 14])
+    doc.add_heading("Market source and execution-price gate", level=2)
+    table(
+        doc,
+        ["Source", "Use", "Execution authority"],
+        [
+            ["NBS production materials", "Public benchmark; ten-day publication", "No"],
+            ["CZCE UR/SA", "Authorized futures trend reference", "No"],
+            ["MOFCOM commodity price", "Periodic industry cross-check", "No"],
+            ["Yuntu ERP / settlement", "Product, region, tax and freight aligned business price", "Yes after confirmation"],
+        ],
+        [2.0, 3.2, 1.2],
+    )
+    para(doc, "Public reference refresh only updates evidence cards. An unconfirmed or stale price cannot enter a new executable plan or economic ranking; the last valid enterprise version is retained and the business owner is notified.")
     return save(doc, "06_决赛完整方案文档.docx")
 
 
@@ -1080,6 +1106,8 @@ def build_demo_acceptance_doc():
     table(doc, ["验收项", "口径", "判定"], ACCEPTANCE_ROWS, [1.05, 4.35, 1.0])
     table(doc, ["指标", "定义稿口径", "目标"], ACCEPTANCE_TARGET_ROWS, [1.35, 4.05, 1.0])
     para(doc, "四项目标是试点定义稿，不表示当前已达成。指标口径在30天数据校核后由企业冻结；没有同口径基线、真实执行回传或归因记录时，不给出节约金额、准确率或投资回报结论。")
+    doc.add_heading("Market source demonstration", level=2)
+    para(doc, "Show the official-reference cards and explain that the enterprise ERP or quotation version confirmed by the business owner is the only execution price. Public refresh, missing source, or stale data must not create a new executable plan.")
     return save(doc, "08_决赛演示与验收附件.docx")
 
 

@@ -64,3 +64,8 @@
 - 飞书Task v2：`https://open.feishu.cn/document/task-v2/overview`
 - 飞书开放平台与Aily：`https://open.feishu.cn/document/client-docs/intro?lang=zh-CN`
 - Aily数据知识问答：`https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/aily-v1/data-knowledge`
+## Market confirmation card
+
+Market confirmation is a separate gate before a production-and-sales plan becomes executable. The adapter first presents source, publication time, fetch time, unit, and quality state. A business owner then confirms the enterprise ERP or quotation version. The Feishu card or approval record should retain product, region, price, unit, tax flag, freight basis, effective time, source URL, confirmer, and price version.
+
+Public-reference refresh is not an enterprise execution-price update. NBS, CZCE, and MOFCOM sources are reference or cross-check inputs only. When confirmation fails, the price expires, or the basis is incomplete, Feishu shows “待经营确认”, freezes new economic ranking and executable plans, and keeps the last valid version. Card actions trigger confirmation, approval, or task tracking only; they never write DCS/SIS.

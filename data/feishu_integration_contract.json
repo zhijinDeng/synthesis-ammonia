@@ -82,6 +82,14 @@
       "answer_contract": ["先给结论", "列出当前数值", "说明安全边界", "标注事实来源", "给出责任人与复核时间"],
       "actions": ["generate_shift_card", "create_execution_task", "draft_review_record"],
       "guards": ["no_source_no_answer", "human_approval_for_high_risk", "never_write_dcs_or_sis"]
+    },
+    "evidence_package": {
+      "schema": "data/evidence_package_schema.json",
+      "export_action": "导出当前方案证据包",
+      "write_targets_after_approval": ["Feishu Base review record", "MES plan summary"],
+      "required_contents": ["input_snapshot", "decision_gates", "material_balance", "action_sheet", "ack_state", "source_lineage"],
+      "boundary": "Local export is an audit handover artifact; it does not mean execution and never writes DCS or SIS.",
+      "actual_value_rule": "Actual load, inventory, energy and benefit can only be filled by Historian or an approved enterprise fact source."
     }
   },
   "operator_cockpit": {

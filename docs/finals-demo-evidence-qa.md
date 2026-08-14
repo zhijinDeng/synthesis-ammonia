@@ -24,6 +24,8 @@
 
 演示收束语：平台交付的不是一个替代操作员的自动控制器，而是一套能够把班次事实、调度判断、责任确认和执行结果串起来的工作方法。企业试点的第一步，是用真实班次检验它是否让调度更快、更稳、更容易复盘。
 
+补充动作：在当班工作区点击“导出当前方案证据包”。下载文件应包含输入快照、行情版本、门禁状态、24小时物料平衡、四岗位动作单、接令状态、飞书流转边界和审计事件。现场说明：这是可交接、可复核的本地 JSON 证据，不是自动上传，也不等同于飞书审批或生产执行。
+
 ## 二、典型班次证据链
 
 ### 场景定义
@@ -159,6 +161,7 @@ MES承接计划和执行记录，APC处理装置内先进控制，RTO负责经�
 
 - `data/compressor_trend_replay_sample.csv`：压缩机趋势回放样例，包含基线、观察、复核、专业会签和演练停算线标签。标签用于验证流程分支，不替代企业设备阈值。
 - `data/interface_field_matrix.csv`：接口字段矩阵样例，记录阶段、来源系统、业务对象、字段、方向、频率、时间基准、质量规则、单位、责任专业和超时动作。
+- `data/evidence_package_schema.json`：方案证据包字段契约，约束输入快照、门禁、物料平衡、动作单、接令状态和审计字段；实际值在未接入 Historian 前必须保持为空。
 ## Market source demonstration
 
 At 0:35-1:15, click “联网读取官方参考” and show the four source cards. Explain that public references support trend cross-checking, while the ERP or quotation version confirmed by the business owner is the only execution price. Show source, publication time, fetch time, unit, quality state, confirmer, and version. If the adapter is unavailable, keep the last valid version and do not create a new executable plan.

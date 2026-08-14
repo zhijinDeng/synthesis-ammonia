@@ -159,3 +159,6 @@ MES承接计划和执行记录，APC处理装置内先进控制，RTO负责经�
 
 - `data/compressor_trend_replay_sample.csv`：压缩机趋势回放样例，包含基线、观察、复核、专业会签和演练停算线标签。标签用于验证流程分支，不替代企业设备阈值。
 - `data/interface_field_matrix.csv`：接口字段矩阵样例，记录阶段、来源系统、业务对象、字段、方向、频率、时间基准、质量规则、单位、责任专业和超时动作。
+## Market source demonstration
+
+At 0:35-1:15, click “联网读取官方参考” and show the four source cards. Explain that public references support trend cross-checking, while the ERP or quotation version confirmed by the business owner is the only execution price. Show source, publication time, fetch time, unit, quality state, confirmer, and version. If the adapter is unavailable, keep the last valid version and do not create a new executable plan.

@@ -66,8 +66,13 @@
 
         <div class="market-gate" id="marketGate">
           <div><b>经营行情闸门</b><span id="marketGateStatus">待运营核价，沿用上一有效版本</span></div>
-          <button id="confirmMarket" type="button">确认本轮样例行情</button>
+          <div class="market-gate-actions">
+            <button id="syncOfficialMarket" type="button" class="secondary">联网读取官方参考</button>
+            <button id="confirmMarket" type="button">确认本轮样例行情</button>
+          </div>
         </div>
+        <div class="market-source-grid" id="marketSourceGrid" aria-live="polite"></div>
+        <p class="data-caption market-sync-note" id="marketSyncNote">官方参考与企业执行价分层；未确认的外部价格不进入调度建议。</p>
           <p class="data-caption">仅用于决赛场景回放，不代表现场设定值。试点时本区改为 ERP、MES、IoT、DCS historian 与设备软件只读事实。</p>
         </section>
 

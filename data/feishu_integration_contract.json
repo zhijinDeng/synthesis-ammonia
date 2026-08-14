@@ -85,6 +85,14 @@
     }
   },
   "operator_cockpit": {
+    "market_price_gate": {
+      "reference_sources": ["nbs_production_materials", "czce_market_data", "mofcom_commodity_price"],
+      "execution_source": "yuntu_erp_business_price",
+      "required_confirmation": ["product", "region", "price", "unit", "tax_included", "freight_basis", "effective_at", "confirmed_by", "version"],
+      "unconfirmed_action": "keep_last_valid_version_and_freeze_new_economic_ranking",
+      "feishu_record": ["source_id", "source_url", "published_at", "fetched_at", "business_effective_at", "quality_code", "confirmed_by", "version"],
+      "boundary": "reference_cards_only; no_dcs_or_sis_write"
+    },
     "event_priorities": ["P1", "P2", "P3"],
     "allocation_decisions": ["保", "稳", "降", "限", "停", "询价外采"],
     "execution_checks": ["班长确认", "跨装置动作单", "责任岗位接令", "MES目标负荷", "现场执行反馈", "班末效果复核"],

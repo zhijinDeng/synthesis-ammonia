@@ -88,3 +88,8 @@ flowchart LR
 
 - ISA-95：`https://www.isa.org/standards-and-publications/isa-standards/isa-95-standard`
 - ISA-18：`https://www.isa.org/standards-and-publications/isa-standards/isa-18-series-of-standards`
+## Pricing and execution-price boundary
+
+Price is not a single real-time field. Public sources provide benchmarks and trend cross-checks; enterprise ERP, sales quotations, and procurement settlement provide execution prices. Every price record keeps source URL, publication time, fetch time, business effective time, unit, tax/freight basis, confirmer, and version.
+
+`scripts/market_gateway_server.mjs` is an adapter prototype for the registered public sources. If the gateway is unavailable, the UI shows a degraded state. If a public reference is not confirmed by the business owner, the platform freezes the execution price and economic ranking and does not create a new executable plan. Enterprise deployment should replace the ERP connector on the server side; no credential belongs in the browser.

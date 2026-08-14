@@ -1,0 +1,67 @@
+{
+  "contract_version": "market-v1",
+  "purpose": "Register public market references and enterprise execution-price controls for ammonia dispatch.",
+  "sources": [
+    {
+      "id": "nbs_production_materials",
+      "name": "National Bureau of Statistics - production materials",
+      "kind": "official_public_reference",
+      "products": ["urea", "compound fertilizer", "phosphate fertilizer", "potash fertilizer"],
+      "refresh": "ten-day period",
+      "url": "https://www.stats.gov.cn/sj/zxfb/",
+      "role": "national wholesale reference",
+      "execution_authority": false,
+      "fallback_url": "https://www.stats.gov.cn/sj/zxfbhjd/202607/t20260713_1964100.html"
+    },
+    {
+      "id": "czce_market_data",
+      "name": "Zhengzhou Commodity Exchange",
+      "kind": "official_exchange_reference",
+      "products": ["urea futures UR", "soda ash futures SA"],
+      "refresh": "intraday or end-of-day, subject to market-data authorization",
+      "url": "https://www.czce.com.cn/cn/",
+      "role": "futures price and forward-trend reference",
+      "execution_authority": false,
+      "note": "Futures price is not liquid-ammonia spot price or enterprise landed price."
+    },
+    {
+      "id": "mofcom_commodity_price",
+      "name": "MOFCOM commodity price network",
+      "kind": "government_reference",
+      "products": ["liquid ammonia industry reference", "fertilizer industry reference"],
+      "refresh": "periodic industry publication; not a continuous real-time feed",
+      "url": "https://price.mofcom.gov.cn/",
+      "role": "cross-check for industry trend",
+      "execution_authority": false,
+      "note": "Keep the original article and publication date because public entries may be averages or ranges."
+    },
+    {
+      "id": "yuntu_erp_business_price",
+      "name": "Yuntu ERP / sales and procurement settlement",
+      "kind": "enterprise_authoritative",
+      "products": ["liquid ammonia", "nitric acid", "urea solution", "compound fertilizer", "linked products"],
+      "refresh": "order change, quotation confirmation, or daily settlement",
+      "url": "enterprise connector to be confirmed",
+      "role": "execution price for dispatch",
+      "execution_authority": true,
+      "required_fields": ["product", "region", "price", "tax_included", "freight_basis", "effective_at", "confirmed_by", "version"]
+    }
+  ],
+  "fallback_policy": {
+    "unconfirmed_update": "Do not enter an executable plan; keep the last valid price version.",
+    "stale_after_minutes": 1440,
+    "missing_primary_price": "Keep public reference cards visible, freeze liquid-ammonia execution price and economic ranking, and route to business confirmation.",
+    "audit_fields": ["source_id", "source_url", "published_at", "fetched_at", "business_effective_at", "unit", "quality_code", "confirmed_by", "version"]
+  },
+  "demo_reference": {
+    "status": "sample_only",
+    "last_verified_public_example": {
+      "source_id": "nbs_production_materials",
+      "product": "urea (medium/small granule)",
+      "value": 1827.8,
+      "unit": "CNY/t",
+      "published_at": "2026-07-14",
+      "url": "https://www.stats.gov.cn/sj/zxfbhjd/202607/t20260713_1964100.html"
+    }
+  }
+}

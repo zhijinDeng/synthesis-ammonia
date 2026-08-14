@@ -29,6 +29,20 @@ const uiState = {
 
   confirmedMarket: { ammoniaPrice: 2180, nitricTrend: -6, version: 1, confirmedAt: new Date() },
 
+  officialMarket: {
+    status: "not_connected",
+    fetchedAt: null,
+    executionPriceStatus: "待ERP/经营确认",
+    sources: [
+      { id: "nbs_production_materials", name: "国家统计局", products: ["尿素", "复合肥"], refresh: "旬度", status: "待联网", message: "官方批发参考" },
+      { id: "czce_market_data", name: "郑州商品交易所", products: ["尿素UR", "纯碱SA"], refresh: "盘中/日终", status: "需行情授权", message: "期货趋势参考" },
+      { id: "mofcom_commodity_price", name: "商务部商品价格网", products: ["液氨行业参考"], refresh: "周期性资料", status: "已登记", message: "行业交叉验证" },
+      { id: "yuntu_erp_business_price", name: "云图ERP/经营系统", products: ["液氨", "硝酸", "下游产品"], refresh: "订单/结算触发", status: "待企业接口", message: "调度执行主价" }
+    ],
+    references: [],
+    note: "官方参考与企业执行价分层；未确认的外部价格不进入调度建议。"
+  },
+
   incidentStatus: {},
 
   activeIncident: null,
@@ -39,6 +53,56 @@ const uiState = {
 
 function activeMarket() {
   return uiState.confirmedMarket;
+}
+
+const MARKET_GATEWAY_URL = "http://127.0.0.1:4174/api/market/snapshot";
+
+function escapeMarketText(value) {
+  return String(value ?? "").replace(/[&<>\"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[char]));
+}
+
+function marketTime(value) {
+  if (!value) return "未更新";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString("zh-CN", { hour12: false });
+}
+
+function renderOfficialMarket() {
+  const grid = document.getElementById("marketSourceGrid");
+  const note = document.getElementById("marketSyncNote");
+  if (!grid || !note) return;
+  const snapshot = uiState.officialMarket;
+  grid.innerHTML = snapshot.sources.map(source => {
+    const statusClass = source.status === "已更新" ? "good" : source.status === "网络不可用" || source.status === "网关未启动" ? "warn" : "neutral";
+    return `<article class="market-source-card ${statusClass}"><div class="market-source-head"><b>${escapeMarketText(source.name)}</b><span>${escapeMarketText(source.status)}</span></div><small>${escapeMarketText((source.products || []).join(" / "))} · ${escapeMarketText(source.refresh)}</small><p>${escapeMarketText(source.message || source.role || "")}</p></article>`;
+  }).join("");
+  const references = (snapshot.references || []).map(item => `${item.product} ${item.value}${item.unit}`).join("；");
+  note.textContent = `${snapshot.note || ""}${snapshot.fetchedAt ? ` 最近核验 ${marketTime(snapshot.fetchedAt)}。` : ""}${references ? ` 官方参考：${references}。` : ""}`;
+}
+
+async function syncOfficialMarket() {
+  const button = document.getElementById("syncOfficialMarket");
+  if (button) {
+    button.disabled = true;
+    button.textContent = "正在读取官方参考...";
+  }
+  uiState.officialMarket = { ...uiState.officialMarket, status: "syncing", note: "正在读取登记的官方公开源；不会改变液氨执行价格。" };
+  renderOfficialMarket();
+  try {
+    const response = await fetch(MARKET_GATEWAY_URL, { headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error(`行情网关 HTTP ${response.status}`);
+    uiState.officialMarket = await response.json();
+    events.unshift({ title: "官方行情参考已核验", body: `${uiState.officialMarket.executionPriceStatus}；外部参考不自动写入调度建议。` });
+  } catch (error) {
+    uiState.officialMarket = { ...uiState.officialMarket, status: "gateway_unavailable", sources: uiState.officialMarket.sources.map(source => source.status === "待联网" ? { ...source, status: "网关未启动", message: "请启动本地行情网关，或由企业部署后台适配服务" } : source), note: `官方参考未更新：${error.message}。沿用上一有效版本，液氨执行价仍需经营确认。` };
+    events.unshift({ title: "官方行情未更新", body: uiState.officialMarket.note });
+  }
+  if (events.length > 6) events.pop();
+  if (button) {
+    button.disabled = false;
+    button.textContent = "联网读取官方参考";
+  }
+  render();
 }
 
 function hardTrigger() {
@@ -1024,14 +1088,16 @@ function renderMarketGate() {
   const button = document.getElementById("confirmMarket");
   const header = document.getElementById("headerMarketState");
   const source = document.getElementById("marketSourceState");
+  const officialUpdated = uiState.officialMarket.status === "reference_updated";
   status.textContent = uiState.marketConfirmed
     ? `运营样例已确认 V${market.version} · ${market.ammoniaPrice}元/t · 硝酸${market.nitricTrend}%`
-    : `待运营核价，计算沿用 V${market.version} · 页面新输入尚未生效`;
-  header.textContent = uiState.marketConfirmed ? `行情样例 V${market.version} 已确认` : "行情样例需核价";
+    : officialUpdated ? `官方参考已更新，执行价仍沿用 V${market.version} · 等待经营确认` : `待运营核价，计算沿用 V${market.version} · 页面新输入尚未生效`;
+  header.textContent = uiState.marketConfirmed ? `行情样例 V${market.version} 已确认` : officialUpdated ? "官方参考已更新，执行价待确认" : "行情样例需核价";
   source.innerHTML = uiState.marketConfirmed
     ? `<i class="pulse good"></i>行情样例 V${market.version} 已确认 · 本轮建议已重算`
-    : '<i class="pulse warn"></i>行情样例待核价 · 新输入不参与建议';
+    : officialUpdated ? '<i class="pulse good"></i>官方参考已更新 · 液氨执行价仍需ERP/经营确认' : '<i class="pulse warn"></i>行情样例待核价 · 新输入不参与建议';
   document.getElementById("marketGate").classList.toggle("confirmed", uiState.marketConfirmed);
+  document.getElementById("marketGate").classList.toggle("official-updated", officialUpdated);
   button.textContent = uiState.marketConfirmed ? "重新确认本轮行情" : "确认本轮样例行情";
 }
 
@@ -1099,6 +1165,7 @@ function render() {
   document.getElementById("rollbackRule").textContent = "偏差>3pct、关键数据失效或现场拒绝";
   document.getElementById("shiftSummary").textContent = `${text.mode}｜24h`;
   document.getElementById("digitalEmployeeMeta").textContent = `只读建议层 · 最近核算 ${uiState.generatedAt.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}`;
+  renderOfficialMarket();
   renderMarketGate();
   renderEventQueue(plan);
   renderEnterpriseAllocation(plan);
@@ -1254,6 +1321,10 @@ document.getElementById("actionSheet").addEventListener("change", event => {
   render();
 });
 
+document.getElementById("syncOfficialMarket").addEventListener("click", () => {
+  syncOfficialMarket();
+});
+
 document.getElementById("confirmMarket").addEventListener("click", () => {
   uiState.confirmedMarket = {
     ammoniaPrice: state.ammoniaPrice,
@@ -1323,4 +1394,5 @@ updateShiftClock();
 setInterval(updateShiftClock, 1000);
 
 pushEvent("recalc", calc(), strategy(calc()));
-render();
+render();
+window.setTimeout(() => syncOfficialMarket(), 650);

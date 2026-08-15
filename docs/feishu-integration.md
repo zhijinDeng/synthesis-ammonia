@@ -64,8 +64,8 @@
 - 飞书Task v2：`https://open.feishu.cn/document/task-v2/overview`
 - 飞书开放平台与Aily：`https://open.feishu.cn/document/client-docs/intro?lang=zh-CN`
 - Aily数据知识问答：`https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/aily-v1/data-knowledge`
-## Market confirmation card
+## 行情确认卡片
 
-Market confirmation is a separate gate before a production-and-sales plan becomes executable. The adapter first presents source, publication time, fetch time, unit, and quality state. A business owner then confirms the enterprise ERP or quotation version. The Feishu card or approval record should retain product, region, price, unit, tax flag, freight basis, effective time, source URL, confirmer, and price version.
+行情确认是产供销方案进入可执行状态前的一道独立闸门。平台先展示来源、发布时间、读取时间、单位和质量状态，再由经营人员确认企业ERP或报价版本。飞书卡片或审批记录保留产品、区域、价格、单位、含税标记、运费口径、生效时间、来源网址、确认人和价格版本。
 
-Public-reference refresh is not an enterprise execution-price update. NBS, CZCE, and MOFCOM sources are reference or cross-check inputs only. When confirmation fails, the price expires, or the basis is incomplete, Feishu shows “待经营确认”, freezes new economic ranking and executable plans, and keeps the last valid version. Card actions trigger confirmation, approval, or task tracking only; they never write DCS/SIS.
+公开参考刷新不等于企业执行价更新。国家统计局、郑州商品交易所和商务部资料只用于参考或交叉核验；确认失败、价格过期或口径不完整时，飞书显示“待经营确认”，冻结新的经济排序和可执行方案，保留上一有效版本。卡片动作只负责确认、审批和任务跟踪，不写入DCS/SIS。

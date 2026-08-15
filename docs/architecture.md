@@ -92,8 +92,8 @@ flowchart LR
 
 - ISA-95：`https://www.isa.org/standards-and-publications/isa-standards/isa-95-standard`
 - ISA-18：`https://www.isa.org/standards-and-publications/isa-standards/isa-18-series-of-standards`
-## Pricing and execution-price boundary
+## 行情口径与执行价闸门
 
-Price is not a single real-time field. Public sources provide benchmarks and trend cross-checks; enterprise ERP, sales quotations, and procurement settlement provide execution prices. Every price record keeps source URL, publication time, fetch time, business effective time, unit, tax/freight basis, confirmer, and version.
+价格不是一个可以直接拿来用的实时数字。公开来源只承担趋势参考和交叉核验，企业ERP、销售报价和采购结算版本才承担调度执行价。每条价格记录保留来源网址、发布时间、读取时间、业务生效时间、单位、含税/运费口径、确认人和版本。
 
-`scripts/market_gateway_server.mjs` is an adapter prototype for the registered public sources. If the gateway is unavailable, the UI shows a degraded state. If a public reference is not confirmed by the business owner, the platform freezes the execution price and economic ranking and does not create a new executable plan. Enterprise deployment should replace the ERP connector on the server side; no credential belongs in the browser.
+`scripts/market_gateway_server.mjs`是针对登记来源的适配器原型。网关不可用时，页面显示降级状态；公开参考没有经过经营人员确认时，平台冻结执行价和新的经济排序，不生成新的可执行方案。企业部署时由服务端替换为ERP连接器，浏览器端不保存凭据。

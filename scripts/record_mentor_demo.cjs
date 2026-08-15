@@ -68,6 +68,10 @@ async function main() {
   await click('[data-action="export"]');
   await caption("6/6 证据包：输入、门禁、动作单、接令状态和版本都能带走复核。", 4);
 
+  await click('[data-workspace="system"]');
+  await click('[data-roadmap-stage="60"]');
+  await caption("7/7 企业试点路线：30天校核数据，60天旁路回放，90天才进入受控验证。", 4);
+
   await page.locator("#mentor-demo-caption").evaluate(node => { node.textContent += " | 演示样例，不代表企业实时数据"; });
   await sleep(2500);
   const video = page.video();

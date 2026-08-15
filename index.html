@@ -233,6 +233,31 @@
           <p class="data-caption rollout-note">90 天也不等于自动控制：DCS/SIS 继续负责控制和保护，平台只有在企业完成安全、生产、设备和经营验收后，才进入受控的小范围执行验证。</p>
         </section>
 
+        <section class="panel shadow-acceptance-panel" data-view="system">
+          <div class="panel-title"><span>影子运行验收台</span><strong>建议与人工并行，不下现场指令</strong></div>
+          <div class="shadow-acceptance-head">
+            <div>
+              <p class="shadow-kicker">60 天旁路回放 · 演示验收样例</p>
+              <h3>先让调度师看见“如果当时采用建议，会发生什么”</h3>
+              <p>选择一条历史班次，把同一份输入快照分别交给人工原计划和平台建议，检查约束、差异和实际回传。当前页面只演示验收方法，未接入云图现场 Historian，不能据此宣称真实节约。</p>
+            </div>
+            <div class="shadow-boundary"><b>影子运行的边界</b><span>平台计算、记录、对照；现场继续按原流程生产。</span><span>不写 DCS / SIS，不自动改变负荷，不替代班长和专业会签。</span></div>
+          </div>
+          <div class="shadow-steps" aria-label="影子运行验收步骤">
+            <span class="done"><i>1</i>冻结输入快照</span><span class="done"><i>2</i>生成平台建议</span><span class="done"><i>3</i>并排人工原计划</span><span class="active"><i>4</i>核对实际回传</span><span><i>5</i>形成验收结论</span>
+          </div>
+          <div class="shadow-toolbar">
+            <label>回放班次<select id="shadowCaseSelect"><option value="tight">甲班 · 液氨趋紧</option><option value="energy">乙班 · 公辅波动</option><option value="equipment">丙班 · 压机趋势偏离</option></select></label>
+            <div class="shadow-toolbar-actions"><button class="secondary" id="loadShadowCase" type="button">载入班次</button><button class="primary" id="createShadowRecord" type="button">生成验收记录</button><button class="secondary" id="exportShadowRecord" type="button">导出影子摘要</button></div>
+          </div>
+          <div class="shadow-kpi-grid" id="shadowKpis"></div>
+          <div class="shadow-acceptance-grid">
+            <section class="shadow-compare-card"><div class="subpanel-title"><span>同快照并行对照</span><strong id="shadowCaseLabel">甲班 · 液氨趋紧</strong></div><div class="shadow-compare-table" id="shadowCompareTable"></div></section>
+            <section class="shadow-gate-card"><div class="subpanel-title"><span>验收门槛</span><strong id="shadowOverallStatus">待补企业回传</strong></div><div class="shadow-gates" id="shadowGates"></div></section>
+          </div>
+          <p class="data-caption shadow-footnote" id="shadowRecordState">当前为可复现验收样例：已演示输入冻结、建议生成和人工对照；实际效果栏保持“待接入”，不会用样例数冒充现场结果。</p>
+        </section>
+
         <section class="panel">
           <div class="panel-title"><span>规则方案比选</span><strong id="bestPlan">优选：稳氨</strong></div>
           <div id="scenarioCards" class="scenario-cards"></div>

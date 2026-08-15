@@ -1520,6 +1520,70 @@ document.querySelectorAll("[data-roadmap-stage]").forEach(button => {
 });
 renderRolloutDetail("30");
 
+const shadowCases = {
+  tight: {
+    label: "甲班 · 液氨趋紧",
+    kpis: [["有效班次", "18 / 30", "已完成样例回放"], ["数据完整性", "98.6%", "演示快照口径"], ["硬约束突破", "0 次", "安全闸门结果"], ["实际效果", "待接入", "不以样例冒充现场", "warn"]],
+    compare: [["液氨去向", "尿素优先、硝酸降负", "人工维持原分配", "差异 2 项"], ["合成负荷", "按安全库存缓降", "维持当前负荷", "待班长复核"], ["约束校核", "7 / 7 通过", "人工记录完整", "可复算"]],
+    gates: [["输入快照冻结", "订单、MES、罐区与行情版本一致", "通过"], ["建议可复算", "同一快照重复计算结果一致", "通过"], ["安全硬约束", "安全库存、公辅、设备红线无突破", "通过"], ["实际回传", "Historian 只读回传负荷和库存", "待企业接入", "pending"]],
+    note: "甲班样例已完成输入冻结、建议生成和人工原计划对照；实际负荷、库存和能耗仍待企业 Historian 授权回传。"
+  },
+  energy: {
+    label: "乙班 · 公辅波动",
+    kpis: [["有效班次", "22 / 30", "已完成样例回放"], ["数据完整性", "99.1%", "演示快照口径"], ["硬约束突破", "0 次", "安全闸门结果"], ["实际效果", "待接入", "不以样例冒充现场", "warn"]],
+    compare: [["公辅约束", "先吸收蒸汽波动", "按原计划执行", "差异 1 项"], ["下游负荷", "错峰安排高耗能段", "未调整", "待热电复核"], ["约束校核", "6 / 6 通过", "人工记录完整", "可复算"]],
+    gates: [["输入快照冻结", "能源价格、蒸汽和电力口径一致", "通过"], ["建议可复算", "同一快照重复计算结果一致", "通过"], ["公辅边界", "热电 APC 目标和平台建议未冲突", "通过"], ["实际回传", "公辅和负荷实际值只读回传", "待企业接入", "pending"]],
+    note: "乙班样例重点验证公辅波动下的跨装置排序；平台只提出错峰建议，不替代热电 APC 的局部控制。"
+  },
+  equipment: {
+    label: "丙班 · 压机趋势偏离",
+    kpis: [["有效班次", "27 / 30", "已完成样例回放"], ["数据完整性", "97.9%", "演示快照口径"], ["硬约束突破", "0 次", "安全闸门结果"], ["实际效果", "待接入", "不以样例冒充现场", "warn"]],
+    compare: [["设备判断", "触发专业复核并限速", "按原负荷观察", "差异 1 项"], ["生产安排", "保留连续生产窗口", "维持当前负荷", "待设备会签"], ["约束校核", "5 / 5 通过", "人工记录完整", "可复算"]],
+    gates: [["趋势输入冻结", "振动、轴位移和温度窗口一致", "通过"], ["弱信号解释", "趋势与检查项可追溯", "通过"], ["专业会签", "设备岗位确认是否限负荷", "待会签", "pending"], ["实际回传", "设备和负荷实际值只读回传", "待企业接入", "pending"]],
+    note: "丙班样例重点验证“提醒不是联锁”：平台可以提前提出复核和限速建议，是否调整负荷仍由设备与生产专业确认。"
+  }
+};
+
+let shadowState = { caseId: "tight", recordCreated: false };
+
+function renderShadowCase(caseId = shadowState.caseId) {
+  const item = shadowCases[caseId] || shadowCases.tight;
+  shadowState.caseId = caseId;
+  document.getElementById("shadowCaseLabel").textContent = item.label;
+  document.getElementById("shadowKpis").innerHTML = item.kpis.map(([label, value, note, tone]) => `<article class="shadow-kpi ${tone || ""}"><small>${label}</small><strong>${value}</strong><span>${note}</span></article>`).join("");
+  document.getElementById("shadowCompareTable").innerHTML = `<table><thead><tr><th>观察项</th><th>平台建议</th><th>人工原计划</th><th>对照结论</th></tr></thead><tbody>${item.compare.map(([name, ai, human, result]) => `<tr><td>${name}</td><td><strong>${ai}</strong></td><td>${human}</td><td>${result}</td></tr>`).join("")}</tbody></table>`;
+  document.getElementById("shadowGates").innerHTML = item.gates.map(([name, detail, result, tone]) => `<div class="shadow-gate ${tone || ""}"><i>${tone === "pending" ? "!" : "✓"}</i><div><b>${name}</b><span>${detail}</span></div><em>${result}</em></div>`).join("");
+  const hasPending = item.gates.some(row => row[3] === "pending");
+  document.getElementById("shadowOverallStatus").textContent = hasPending ? "待补企业回传" : "样例门槛通过";
+  document.getElementById("shadowOverallStatus").className = hasPending ? "status-warn" : "status-ok";
+  document.getElementById("shadowRecordState").textContent = shadowState.recordCreated ? `已生成 ${item.label} 的本地影子验收记录。${item.note}` : `当前为可复现验收样例：${item.note}`;
+}
+
+document.getElementById("loadShadowCase").addEventListener("click", () => {
+  shadowState.recordCreated = false;
+  renderShadowCase(document.getElementById("shadowCaseSelect").value);
+});
+
+document.getElementById("createShadowRecord").addEventListener("click", () => {
+  shadowState.recordCreated = true;
+  renderShadowCase(document.getElementById("shadowCaseSelect").value);
+  events.unshift({ title: "影子运行验收记录已生成", body: `${shadowCases[shadowState.caseId].label}已完成建议与人工原计划对照；实际回传仍待企业授权。` });
+  if (events.length > 6) events.pop();
+});
+
+document.getElementById("exportShadowRecord").addEventListener("click", () => {
+  const item = shadowCases[shadowState.caseId];
+  const record = { schema: "shadow-run-acceptance.v1", generatedAt: new Date().toISOString(), sampleOnly: true, case: item.label, kpis: item.kpis, comparison: item.compare, gates: item.gates, boundary: "只读旁路回放；不写DCS/SIS；实际效果待企业Historian回传与专业验收" };
+  const url = URL.createObjectURL(new Blob([JSON.stringify(record, null, 2)], { type: "application/json;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `shadow-acceptance-${shadowState.caseId}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+});
+
+renderShadowCase();
+
 function updateShiftClock() {
 
   document.getElementById("shiftClock").textContent = new Date().toLocaleTimeString("zh-CN", { hour12: false });

@@ -194,7 +194,33 @@
           <p class="data-caption">验收样例采用“相对液氨净外售价值的分配贡献”口径；它用于比较液氨去向，不等同于平台创造的收益。系统收益须与同一输入快照下的人工原计划比较，并在执行后核算。</p>
         </section>
 
-        <section class="panel">
+        <section class="panel rollout-panel" data-view="system">
+          <div class="panel-title"><span>30/60/90 天企业试点路线</span><strong>从可核验到可受控</strong></div>
+          <p class="data-caption">这不是网页里的三种运行模式，而是企业上线的实施顺序：先把数据和口径核准，再旁路验证，最后才进入条件受控的执行试点。</p>
+          <div class="rollout-grid">
+            <article class="rollout-card current">
+              <div class="rollout-top"><strong>30 天</strong><span>数据校核</span></div>
+              <h3>先把账对上</h3>
+              <p>只接订单导出、MES 班次计划、罐区历史摘要和飞书协同记录，平台只读，不影响生产。</p>
+              <dl><div><dt>主要功能</dt><dd>字段字典、数据质量检查、液氨平衡回放、责任岗位确认</dd></div><div><dt>交付结果</dt><dd>接口清单、样例数据、数据质量报告、企业口径确认表</dd></div></dl>
+            </article>
+            <article class="rollout-card">
+              <div class="rollout-top"><strong>60 天</strong><span>旁路回放</span></div>
+              <h3>再验证建议是否靠谱</h3>
+              <p>扩展生产历史数据库、设备和公用工程只读数据，与人工调度方案并行比较，不给控制系统下指令。</p>
+              <dl><div><dt>主要功能</dt><dd>压机趋势复核、产供销三案比较、能源约束分析、人工方案对照</dd></div><div><dt>交付结果</dt><dd>有效班次回放、偏差报告、异常复盘、停用条件验证</dd></div></dl>
+            </article>
+            <article class="rollout-card">
+              <div class="rollout-top"><strong>90 天</strong><span>条件受控验证</span></div>
+              <h3>最后才进入小闭环</h3>
+              <p>覆盖不少于 30 个有效班次和三类典型场景，在企业批准的范围内把建议、飞书任务、MES 计划摘要和班末复盘串起来。</p>
+              <dl><div><dt>主要功能</dt><dd>班长确认、专业会签、岗位接令、执行回传、收益归因</dd></div><div><dt>交付结果</dt><dd>试点验收报告、采纳/未采纳原因库、规则版本和推广建议</dd></div></dl>
+            </article>
+          </div>
+          <p class="data-caption rollout-note">90 天也不等于自动控制：DCS/SIS 继续负责控制和保护，平台只有在企业完成安全、生产、设备和经营验收后，才进入受控的小范围执行验证。</p>
+        </section>
+
+        <section class="panel">
           <div class="panel-title"><span>规则方案比选</span><strong id="bestPlan">优选：稳氨</strong></div>
           <div id="scenarioCards" class="scenario-cards"></div>
         </section>

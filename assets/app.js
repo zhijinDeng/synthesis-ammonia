@@ -1583,7 +1583,6 @@ document.getElementById("exportShadowRecord").addEventListener("click", () => {
 });
 
 renderShadowCase();
-
 function updateShiftClock() {
 
   document.getElementById("shiftClock").textContent = new Date().toLocaleTimeString("zh-CN", { hour12: false });

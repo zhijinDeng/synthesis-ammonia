@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2560" height="1440" viewBox="0 0 2560 1440" role="img" aria-labelledby="title desc">
+  <title id="title">氨智领航调控师产品功能全景树</title>
+  <desc id="desc">从企业事实、调度决策、产供销与稳产场景，到飞书执行、影子验收、经验传承和安全治理的完整产品脉络。</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#18324a" flood-opacity="0.12"/></filter>
+    <style>
+      text{font-family:"Microsoft YaHei","Noto Sans CJK SC",Arial,sans-serif;letter-spacing:0}
+      .title{font-size:54px;font-weight:700;fill:#102a43}.sub{font-size:24px;fill:#52687a}
+      .node-title{font-size:30px;font-weight:700;fill:#102a43}.node-copy{font-size:21px;fill:#334e60}
+      .small{font-size:19px;fill:#52687a}.white{fill:#fff}.center-title{font-size:34px;font-weight:700;fill:#fff}.center-copy{font-size:21px;fill:#d9f2ef}
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 Z" fill="#8098a8"/></marker>
+  </defs>
+  <rect width="2560" height="1440" fill="#f4f8fa"/>
+  <rect x="0" y="0" width="2560" height="18" fill="#20a486"/>
+  <text x="100" y="92" class="title">氨智领航调控师｜产品功能全景树</text>
+  <text x="100" y="136" class="sub">把分散在 ERP、MES、DCS 摘要、设备与行情中的事实，组织成可确认、可执行、可验收、可传承的班次决策</text>
+
+  <path d="M450 470 H625" stroke="#8098a8" stroke-width="5" fill="none" marker-end="url(#arrow)"/>
+  <path d="M985 470 H1160" stroke="#8098a8" stroke-width="5" fill="none" marker-end="url(#arrow)"/>
+  <path d="M1520 470 H1695" stroke="#8098a8" stroke-width="5" fill="none" marker-end="url(#arrow)"/>
+  <path d="M2055 470 H2230" stroke="#8098a8" stroke-width="5" fill="none" marker-end="url(#arrow)"/>
+
+  <g filter="url(#shadow)">
+    <rect x="80" y="260" width="370" height="420" rx="18" fill="#ffffff" stroke="#b8cad5" stroke-width="2"/>
+    <rect x="80" y="260" width="370" height="68" rx="18" fill="#dbeef4"/><rect x="80" y="310" width="370" height="18" fill="#dbeef4"/>
+    <text x="110" y="305" class="node-title">1 统一班次事实</text>
+    <text x="110" y="365" class="node-copy"><tspan x="110">• 订单与市场：ERP / 报价</tspan><tspan x="110" dy="44">• 生产与库存：MES / 罐区</tspan><tspan x="110" dy="44">• 设备与公辅：IoT / APC</tspan><tspan x="110" dy="44">• 控制摘要：DCS 只读</tspan><tspan x="110" dy="44">• 每条数据带来源、时间</tspan><tspan x="110" dy="44">  单位、质量码和责任人</tspan></text>
+
+    <rect x="625" y="260" width="360" height="420" rx="18" fill="#ffffff" stroke="#88c9bb" stroke-width="2"/>
+    <rect x="625" y="260" width="360" height="68" rx="18" fill="#dff4ee"/><rect x="625" y="310" width="360" height="18" fill="#dff4ee"/>
+    <text x="655" y="305" class="node-title">2 校核与计算</text>
+    <text x="655" y="365" class="node-copy"><tspan x="655">• 经营行情闸门与版本</tspan><tspan x="655" dy="44">• 24 小时液氨守恒</tspan><tspan x="655" dy="44">• 相对外售贡献账本</tspan><tspan x="655" dy="44">• 安全、库存、设备、公辅</tspan><tspan x="655" dy="44">  与负荷变化速度约束</tspan><tspan x="655" dy="44">• 多方案比较与回滚条件</tspan></text>
+
+    <rect x="1160" y="220" width="360" height="500" rx="18" fill="#0d4652" stroke="#0d4652" stroke-width="2"/>
+    <text x="1340" y="286" text-anchor="middle" class="center-title">超级数字员工</text>
+    <text x="1340" y="326" text-anchor="middle" class="center-copy">氨智领航调控师</text>
+    <line x1="1200" y1="358" x2="1480" y2="358" stroke="#61cdb6" stroke-width="2"/>
+    <text x="1200" y="405" class="white" font-size="23" font-weight="700">企业优先级</text>
+    <text x="1200" y="447" class="center-copy"><tspan x="1200">1. 安全红线不可突破</tspan><tspan x="1200" dy="42">2. 尽量保证流程连续</tspan><tspan x="1200" dy="42">3. 再比较产供销与成本</tspan><tspan x="1200" dy="42">4. 必须停时给出取舍顺序</tspan></text>
+    <rect x="1200" y="605" width="280" height="64" rx="10" fill="#20a486"/>
+    <text x="1340" y="646" text-anchor="middle" class="white" font-size="24" font-weight="700">输出：可解释班次方案</text>
+
+    <rect x="1695" y="260" width="360" height="420" rx="18" fill="#ffffff" stroke="#e4b15a" stroke-width="2"/>
+    <rect x="1695" y="260" width="360" height="68" rx="18" fill="#fff1d8"/><rect x="1695" y="310" width="360" height="18" fill="#fff1d8"/>
+    <text x="1725" y="305" class="node-title">3 两条业务主赛道</text>
+    <text x="1725" y="365" class="node-copy"><tspan x="1725">产供销协同</tspan><tspan x="1725" dy="38" class="small">保谁 / 降谁 / 停谁 / 外采</tspan><tspan x="1725" dy="56">稳定生产</tspan><tspan x="1725" dy="38" class="small">弱信号预警 / 公辅吸收</tspan><tspan x="1725" dy="56">四类演练场景</tspan><tspan x="1725" dy="38" class="small">稳氨 / 保供 / 护机 / 错峰</tspan></text>
+
+    <rect x="2230" y="260" width="250" height="420" rx="18" fill="#ffffff" stroke="#c9b3dc" stroke-width="2"/>
+    <rect x="2230" y="260" width="250" height="68" rx="18" fill="#eee5f5"/><rect x="2230" y="310" width="250" height="18" fill="#eee5f5"/>
+    <text x="2260" y="305" class="node-title">4 人机协同</text>
+    <text x="2260" y="365" class="node-copy"><tspan x="2260">• 班长确认</tspan><tspan x="2260" dy="46">• 专业会签</tspan><tspan x="2260" dy="46">• 四岗位接令</tspan><tspan x="2260" dy="46">• 现场按规程</tspan><tspan x="2260" dy="46">• 实际结果回传</tspan><tspan x="2260" dy="46">• 班末复盘</tspan></text>
+  </g>
+
+  <path d="M1340 720 V810" stroke="#20a486" stroke-width="6" fill="none" marker-end="url(#arrow)"/>
+  <path d="M1340 790 H340 V860" stroke="#8098a8" stroke-width="4" fill="none"/>
+  <path d="M1340 790 H920 V860" stroke="#8098a8" stroke-width="4" fill="none"/>
+  <path d="M1340 790 H1500 V860" stroke="#8098a8" stroke-width="4" fill="none"/>
+  <path d="M1340 790 H2080 V860" stroke="#8098a8" stroke-width="4" fill="none"/>
+
+  <g filter="url(#shadow)">
+    <rect x="90" y="860" width="500" height="390" rx="18" fill="#fff" stroke="#72b9d1" stroke-width="2"/>
+    <text x="125" y="915" class="node-title">5 飞书承接执行</text>
+    <text x="125" y="965" class="node-copy"><tspan x="125">互动卡片：事实、建议、风险、操作</tspan><tspan x="125" dy="43">审批会签：班长 + 对应专业</tspan><tspan x="125" dy="43">Task：责任人、截止时间、复核项</tspan><tspan x="125" dy="43">Base：班次、采纳、偏差、原因</tspan><tspan x="125" dy="43">Aily：只检索已审核知识</tspan><tspan x="125" dy="43">事件回调：状态写回审计链</tspan></text>
+
+    <rect x="670" y="860" width="500" height="390" rx="18" fill="#fff" stroke="#e4b15a" stroke-width="2"/>
+    <text x="705" y="915" class="node-title">6 影子运行验收</text>
+    <text x="705" y="965" class="node-copy"><tspan x="705">同一输入快照：平台建议 vs 人工原计划</tspan><tspan x="705" dy="43">验收门槛：可复算、硬约束、专业会签</tspan><tspan x="705" dy="43">真实结果：Historian 未接入就留空</tspan><tspan x="705" dy="43">30 天对口径 / 60 天旁路回放</tspan><tspan x="705" dy="43">90 天企业批准的小闭环</tspan><tspan x="705" dy="43">可导出 JSON 验收证据</tspan></text>
+
+    <rect x="1250" y="860" width="500" height="390" rx="18" fill="#fff" stroke="#88c9bb" stroke-width="2"/>
+    <text x="1285" y="915" class="node-title">7 经验传承与新人学习</text>
+    <text x="1285" y="965" class="node-copy"><tspan x="1285">班后补齐：事实、决定、结果、原因</tspan><tspan x="1285" dy="43">专业审核后才生成学习卡</tspan><tspan x="1285" dy="43">学习卡写清适用条件与禁用条件</tspan><tspan x="1285" dy="43">新员工完成后回到新班次复核</tspan><tspan x="1285" dy="43">规则由企业人工发布、版本可回滚</tspan><tspan x="1285" dy="43">单个案例不会自动改生产规则</tspan></text>
+
+    <rect x="1830" y="860" width="640" height="390" rx="18" fill="#fff" stroke="#d38b8b" stroke-width="2"/>
+    <text x="1865" y="915" class="node-title">8 全程治理与安全边界</text>
+    <text x="1865" y="965" class="node-copy"><tspan x="1865">部署在生产运行管理层，不重做 DCS / SIS / APC</tspan><tspan x="1865" dy="43">控制域只读出数；审批后仅写计划摘要与协同记录</tspan><tspan x="1865" dy="43">数据超时、质量异常、关键字段缺失时降级人工</tspan><tspan x="1865" dy="43">建议带版本、有效期、撤销条件和防重复处理键</tspan><tspan x="1865" dy="43">收益只有在真实采纳、执行和同口径对照后统计</tspan><tspan x="1865" dy="43">当前样例、已验证能力、待授权接口明确分层</tspan></text>
+  </g>
+
+  <text x="100" y="1360" class="small">一句话看懂：平台不直接动阀门；它把跨系统事实变成可解释方案，再通过人和飞书完成确认、执行、验收与知识沉淀。</text>
+  <text x="2460" y="1360" text-anchor="end" class="small">决赛展示版 · 演练数据不代表企业实际值</text>
+</svg>

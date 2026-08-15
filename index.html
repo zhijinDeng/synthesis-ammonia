@@ -340,6 +340,22 @@
         </section>
 
         <section class="panel">
+        <!-- learning workbench content uses the surrounding panel -->
+
+          <div class="panel-title"><span>经验沉淀与新人学习</span><strong>先审核，再复用</strong></div>
+          <div class="learning-intro"><div><b>把一次班次判断变成下一班可用的工作方法</b><p>班后记录先保留事实、决定、结果和原因；生产、设备、安环或经营专业审核后，才生成学习卡。待审核案例可以追踪，不能直接改变规则、不能直接作为训练样本。</p></div><span class="learning-boundary">企业知识库<br /><em>不自动改规则</em></span></div>
+          <div class="learning-steps" aria-label="经验沉淀流程"><span class="done"><i>1</i>班后补事实</span><span class="active"><i>2</i>专业审核</span><span><i>3</i>生成学习卡</span><span><i>4</i>复用与回测</span></div>
+          <div class="learning-toolbar"><label>案例<select id="learningCaseSelect"><option value="allocation">液氨趋紧 · 产供销重排</option><option value="compressor">压机弱信号 · 护机不停产</option><option value="utilities">公辅波动 · 错峰吸收</option></select></label><div class="learning-actions"><button class="secondary" id="loadLearningCase" type="button">载入案例</button><button class="secondary" id="submitLearningCase" type="button">提交专业审核</button><button class="primary" id="generateLearningCard" type="button">生成学习卡</button></div></div>
+          <div class="learning-body">
+            <section class="learning-case-card"><div class="learning-case-head"><div><span id="learningCaseStage" class="learning-tag">已审核 · 可复用</span><h3 id="learningCaseTitle">液氨趋紧 · 产供销重排</h3></div><strong id="learningCaseOwner">调度 + 运营</strong></div><p id="learningCaseSummary"></p><dl class="learning-facts"><div><dt>当时事实</dt><dd id="learningFact"></dd></div><div><dt>专家判断</dt><dd id="learningDecision"></dd></div><div><dt>可复用条件</dt><dd id="learningUseWhen"></dd></div><div><dt>禁止直接套用</dt><dd id="learningDoNot"></dd></div></dl></section>
+            <section class="learning-gate-card"><div class="subpanel-title"><span>案例状态</span><strong id="learningStatus">可进入学习库</strong></div><div id="learningGates" class="learning-gates"></div><div class="learning-progress"><span id="learningProgress">学习完成度 0/3</span><button id="completeLearning" class="learning-complete" type="button">完成本张学习卡</button></div></section>
+          </div>
+          <p class="data-caption learning-footnote" id="learningRecordState">学习卡必须带来源班次、审核人、适用工况、禁用条件和规则版本；案例只是帮助新人学会判断，不会绕过审批自动下达动作。</p>
+
+        </section>
+
+        <section class="panel">
+
           <div class="digital-employee-head">
             <img src="assets/digital-shift-dispatcher.webp" alt="数字调度长形象设定图" width="56" height="56" />
             <div><span>数字调度长</span><strong>氨智调控师</strong><small id="digitalEmployeeMeta">只读建议层 · 最近核算 --:--</small></div>

@@ -1583,6 +1583,105 @@ document.getElementById("exportShadowRecord").addEventListener("click", () => {
 });
 
 renderShadowCase();
+
+const learningCases = {
+  allocation: {
+    title: "液氨趋紧 · 产供销重排",
+    owner: "调度 + 运营",
+    reviewed: true,
+    reviewer: "调度长、运营和生产已审核",
+    summary: "液氨库存下行、硝酸行情走弱，但尿素和复合肥存在刚性订单时，调度如何做去向取舍。",
+    fact: "库存接近安全下限；订单交期分化；行情版本已由运营确认；合成回路保持连续生产。",
+    decision: "先保刚性订单和连续生产，硝酸按最低稳定负荷复核，外售作为机会成本基准。",
+    useWhen: "订单、罐存、价格版本和最低稳定负荷均已确认。",
+    doNot: "行情未核价、库存质量异常或装置已接近安全边界时不得直接套用。",
+    gates: [["事实完整", "订单、MES计划、罐区和行情版本齐全", "通过"], ["专业审核", "调度长、运营、生产确认判断和边界", "已审核"], ["版本登记", "规则 NH3-ALLOC-003，适用工况已登记", "可复用"]]
+  },
+  compressor: {
+    title: "压机弱信号 · 护机不停产",
+    owner: "设备 + 班长",
+    reviewed: false,
+    reviewer: "待设备专业确认原始趋势与点检结论",
+    summary: "压缩机振动、轴位移或防喘振裕度出现持续微弱变化，新手容易把它当成正常波动。",
+    fact: "演示样例含多变量趋势和质量码；现场原始测点、持续窗口和点检结果尚未接入。",
+    decision: "先提醒复核和限速条件，不直接下达负荷调整，更不替代DCS报警与联锁。",
+    useWhen: "测点质量合格、趋势持续同向，且设备专业明确了复核项和撤销条件。",
+    doNot: "单一综合指标、质量码异常或未完成专业会签时不得作为学习规则。",
+    gates: [["事实完整", "趋势窗口、质量码和点检记录可追溯", "样例通过"], ["专业审核", "设备岗位确认是否限负荷", "待会签", "pending"], ["版本登记", "未形成可复用规则版本", "锁定", "pending"]]
+  },
+  utilities: {
+    title: "公辅波动 · 错峰吸收",
+    owner: "热电 + 生产",
+    reviewed: true,
+    reviewer: "热电、生产和调度已审核",
+    summary: "蒸汽、电力或空分余量波动时，不把“最大产量”当成唯一目标，而是把波动吸收到可调整窗口。",
+    fact: "公辅约束以只读摘要进入调度层；热电 APC 继续负责局部控制；方案保留恢复窗口。",
+    decision: "先识别受限时段，调整高耗能段节奏，保留连续生产和气轮机驱动的恢复条件。",
+    useWhen: "能源口径、受限时间窗、公辅余量和装置最低稳定负荷已确认。",
+    doNot: "不得将平台建议直接写入热电 APC，也不得因经济排名绕过流程保护。",
+    gates: [["事实完整", "公辅余量、时间窗和APC边界齐全", "通过"], ["专业审核", "热电、生产和调度确认错峰逻辑", "已审核"], ["版本登记", "规则 NH3-UTIL-002，撤销条件已登记", "可复用"]]
+  }
+};
+
+const learningState = { caseId: "allocation", cardGenerated: {}, completed: {}, reviewSubmitted: {} };
+
+function renderLearningCase(caseId = learningState.caseId) {
+  const item = learningCases[caseId] || learningCases.allocation;
+  learningState.caseId = caseId;
+  const reviewed = item.reviewed || learningState.reviewSubmitted[caseId];
+  const cardGenerated = Boolean(learningState.cardGenerated[caseId]);
+  const completed = Boolean(learningState.completed[caseId]);
+  document.getElementById("learningCaseStage").textContent = reviewed ? "已审核 · 可复用" : "待审核 · 仅可追踪";
+  document.getElementById("learningCaseStage").classList.toggle("pending", !reviewed);
+  document.getElementById("learningCaseTitle").textContent = item.title;
+  document.getElementById("learningCaseOwner").textContent = item.owner;
+  document.getElementById("learningCaseSummary").textContent = item.summary;
+  document.getElementById("learningFact").textContent = item.fact;
+  document.getElementById("learningDecision").textContent = item.decision;
+  document.getElementById("learningUseWhen").textContent = item.useWhen;
+  document.getElementById("learningDoNot").textContent = item.doNot;
+  document.getElementById("learningStatus").textContent = cardGenerated ? "已生成学习卡" : reviewed ? "可进入学习库" : "待专业审核";
+  document.getElementById("learningGates").innerHTML = item.gates.map(([name, detail, status, tone]) => {
+    const isReview = name === "专业审核";
+    const isVersion = name === "版本登记";
+    const pending = tone === "pending" || (isReview && !reviewed) || (isVersion && !reviewed);
+    const shownStatus = isReview && reviewed ? "已审核" : isVersion && reviewed ? "可复用" : status;
+    return `<div class="learning-gate ${pending ? "pending" : ""}"><i>${pending ? "!" : "✓"}</i><div><b>${name}</b><span>${detail}</span></div><em>${shownStatus}</em></div>`;
+  }).join("");
+  document.getElementById("learningProgress").textContent = completed ? "学习完成度 3/3" : cardGenerated ? "学习完成度 1/3" : "学习完成度 0/3";
+  document.getElementById("completeLearning").disabled = !cardGenerated || completed;
+  document.getElementById("generateLearningCard").disabled = !reviewed;
+  document.getElementById("submitLearningCase").disabled = reviewed;
+  document.getElementById("learningRecordState").textContent = completed ? `${item.title}学习完成；已记录学习人和完成时间，后续复用仍需按当前班次事实重新核对。` : cardGenerated ? "学习卡已生成，但不会自动改变生产规则；新员工完成后需回到真实班次继续跟班复核。" : item.reviewer + "。";
+}
+
+document.getElementById("loadLearningCase").addEventListener("click", () => renderLearningCase(document.getElementById("learningCaseSelect").value));
+document.getElementById("submitLearningCase").addEventListener("click", () => {
+  const caseId = document.getElementById("learningCaseSelect").value;
+  learningState.reviewSubmitted[caseId] = true;
+  events.unshift({ title: "案例已提交专业审核", body: `${learningCases[caseId].title}进入审核队列，审核通过前不进入学习库或规则版本。` });
+  if (events.length > 6) events.pop();
+  renderLearningCase(caseId);
+});
+document.getElementById("generateLearningCard").addEventListener("click", () => {
+  const caseId = document.getElementById("learningCaseSelect").value;
+  const item = learningCases[caseId];
+  if (!item.reviewed && !learningState.reviewSubmitted[caseId]) return;
+  learningState.cardGenerated[caseId] = true;
+  events.unshift({ title: "新人学习卡已生成", body: `${item.title}已带审核人、适用条件和禁用条件生成学习卡；未写入DCS/SIS。` });
+  if (events.length > 6) events.pop();
+  renderLearningCase(caseId);
+});
+document.getElementById("completeLearning").addEventListener("click", () => {
+  const caseId = document.getElementById("learningCaseSelect").value;
+  if (!learningState.cardGenerated[caseId]) return;
+  learningState.completed[caseId] = true;
+  renderLearningCase(caseId);
+});
+renderLearningCase();
+const learningPanel = document.getElementById("learningCaseSelect")?.closest(".panel");
+learningPanel?.classList.add("learning-workbench");
+if (learningPanel) learningPanel.dataset.view = "execution";
 function updateShiftClock() {
 
   document.getElementById("shiftClock").textContent = new Date().toLocaleTimeString("zh-CN", { hour12: false });

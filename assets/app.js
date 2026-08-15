@@ -1462,6 +1462,11 @@ document.getElementById("submitApproval").addEventListener("click", () => {
   render();
 });
 
+const guideDialog = document.getElementById("guideDialog");
+document.getElementById("openGuide").addEventListener("click", () => {
+  guideDialog.showModal();
+});
+
 function updateShiftClock() {
 
   document.getElementById("shiftClock").textContent = new Date().toLocaleTimeString("zh-CN", { hour12: false });

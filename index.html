@@ -28,28 +28,43 @@
       </div>
 
       <div class="scenario-tabs" aria-label="场景回放">
-        <button data-preset="steady" type="button">稳氨</button>
-        <button data-preset="supply" type="button">保供</button>
-        <button data-preset="protect" type="button">护机</button>
-        <button data-preset="energy" type="button">错峰</button>
+        <button data-preset="steady" type="button" title="稳氨：优先保持合成回路平稳，适合第一次查看">稳氨</button>
+        <button data-preset="supply" type="button" title="保供：液氨紧张或下游订单压力高时，比较各去向">保供</button>
+        <button data-preset="protect" type="button" title="护机：设备健康下降或压机趋势变差时，优先安排复核">护机</button>
+        <button data-preset="energy" type="button" title="错峰：能源或蒸汽成本较高时，查看负荷调整窗口">错峰</button>
       </div>
     </header>
 
     <nav class="workspace-tabs" aria-label="工作台视图">
 
-      <button class="active" data-workspace="overview" type="button">当班态势</button>
+      <button class="active" data-workspace="overview" type="button" title="看当前班次发生了什么、建议是什么、风险在哪里">当班态势</button>
 
-      <button data-workspace="supply" type="button">产供销平衡</button>
+      <button data-workspace="supply" type="button" title="看液氨从哪里来、分给谁、期末库存是否安全">产供销平衡</button>
 
-      <button data-workspace="stability" type="button">稳产预警</button>
+      <button data-workspace="stability" type="button" title="看设备和公辅的趋势提示，以及需要哪个专业复核">稳产预警</button>
 
-      <button data-workspace="execution" type="button">执行复盘</button>
+      <button data-workspace="execution" type="button" title="看班长确认、岗位接令、执行回传和班末复盘">执行复盘</button>
 
-      <button data-workspace="system" type="button">依据与接入</button>
+      <button data-workspace="system" type="button" title="看数据从哪里来、接口如何接入、哪些情况下必须降级人工">依据与接入</button>
+
+      <button id="openGuide" class="guide-button" type="button" aria-haspopup="dialog" title="打开新手说明、组件解释和术语表">使用说明</button>
 
       <span>规则驱动验收沙盘 · 非在线优化器 · 非企业实时数据</span>
 
     </nav>
+
+    <section class="getting-started" aria-label="第一次使用引导">
+      <div class="getting-started-copy">
+        <strong>第一次使用，先按这条路径看</strong>
+        <span>选一个场景 → 看班次事实 → 核对行情闸门 → 查看建议 → 交给岗位确认 → 导出证据包</span>
+      </div>
+      <div class="getting-started-steps" aria-label="上手步骤">
+        <span><b>1</b>选场景</span>
+        <span><b>2</b>看事实</span>
+        <span><b>3</b>看建议</span>
+        <span><b>4</b>确认与复盘</span>
+      </div>
+    </section>
 
     <main class="shell">
       <aside class="rail">
@@ -320,6 +335,69 @@
       </aside>
     </main>
 
+    <dialog id="guideDialog" class="guide-dialog" aria-labelledby="guideTitle">
+      <form method="dialog">
+        <header class="guide-dialog-head">
+          <div><span class="eyebrow dark">新手上手说明</span><h2 id="guideTitle">先看懂，再操作</h2><p>这是合成氨生产运行管理演练平台。它给出跨装置的调度建议，但不替代 DCS、SIS、班长和专业会签。</p></div>
+          <button class="icon-close" value="cancel" aria-label="关闭使用说明">×</button>
+        </header>
+        <div class="guide-dialog-body">
+          <section class="guide-block guide-first">
+            <h3>第一次打开，照着做一遍</h3>
+            <ol>
+              <li><b>先点“稳氨”</b>：恢复相对平稳的班次样例，不要一开始就拖动所有滑块。</li>
+              <li><b>先看中间大卡片</b>：它回答“当前建议是什么、多久有效、什么情况要回滚”。</li>
+              <li><b>再点“联网读取官方参考”</b>：只查看公开参考来源；执行价格仍要由企业 ERP/经营人员确认。</li>
+              <li><b>最后看“执行复盘”</b>：生成卡片、审批草稿和证据包，理解“建议、确认、执行、复盘”的区别。</li>
+            </ol>
+          </section>
+          <section class="guide-block">
+            <h3>页面组件逐项说明</h3>
+            <div class="guide-component-grid">
+              <article><b>场景按钮：稳氨 / 保供 / 护机 / 错峰</b><p>把一组可复现的运行条件一次性带入沙盘。它不是生产命令，只是帮助你观察不同矛盾下平台如何排序问题。</p><small>操作：点击一个场景；页面数据和建议会重新计算。</small></article>
+              <article><b>工作台视图</b><p>当班态势看全局；产供销平衡看液氨分配；稳产预警看设备趋势；执行复盘看责任闭环；依据与接入看数据来源和系统边界。</p><small>操作：点击标签切换，不会清除当前样例。</small></article>
+              <article><b>演练沙盘输入</b><p>左侧滑块是“如果现场发生变化”的假设条件，例如订单变紧、能源变贵、库存下降或压机健康变差。</p><small>操作：一次只调一个变量，然后观察建议、约束和事件是否变化。</small></article>
+              <article><b>经营行情闸门</b><p>把公开行情参考和企业真正用于结算的执行价分开。公开信息可以判断方向，但不能自动成为调度成本依据。</p><small>操作：先读取官方参考，再由经营人员确认本轮样例行情；未确认时不生成新的经济排序。</small></article>
+              <article><b>当前调度建议</b><p>这是平台的核心输出，包含目标负荷、预计产氨、有效时间、依据和回滚条件。它是待确认建议，不是自动控制指令。</p><small>操作：先读标题和回滚触发，再看下方动作单。</small></article>
+              <article><b>24 小时液氨平衡</b><p>把期初库存、预计产氨、外采、各产品用氨和期末库存放在一张账上，回答“分完之后是否低于安全下限”。</p><small>操作：重点看期末可用量和安全余量，不要只看预计产量。</small></article>
+              <article><b>事件队列</b><p>把需要人处理的事项按 P1/P2/P3 排序，并标出来源、责任岗位和截止时间。P1 优先处理，P3 通常是持续观察。</p><small>操作：点击“处置”或“查看”，先确认事实，再选择确认收到、依据不足或生成任务草稿。</small></article>
+              <article><b>压缩机趋势证据</b><p>展示轴振动、轴位移、防喘振裕度和轴承温度等趋势。它用于提前安排设备复核，不等于 DCS 报警，也不直接触发联锁。</p><small>操作：看趋势是否持续、是否多变量同向变化，再交给设备岗位判断。</small></article>
+              <article><b>产供销事实表与经济账本</b><p>比较复合肥、尿素溶液、硝酸、联碱和液氨外售等去向的需求、分配、单位液氨贡献和连续运行代价。</p><small>操作：先看刚性订单和安全约束，再切换去向查看贡献，不把测算值称为已实现收益。</small></article>
+              <article><b>规则方案比选</b><p>把稳氨、保供、护机等候选方案并排展示，说明各自目标、代价和适用条件。平台不是只给一个黑箱答案。</p><small>操作：比较方案差异，回到当前调度建议确认为什么选择当前方案。</small></article>
+              <article><b>跨装置调度动作单</b><p>把一个调度决定拆成合成回路、下游装置、罐区/调度、公辅等责任单元，写清节奏、前置条件和岗位。</p><small>操作：岗位看到并复核后勾选“接令”；接令不代表已执行。</small></article>
+              <article><b>方案执行监督</b><p>区分提交班长确认、班长确认、岗位接令、现场执行回传和班末复盘，避免把“建议发出”误当成“生产完成”。</p><small>操作：按顺序推进演示按钮；企业接入后实际值必须来自 Historian 或 MES。</small></article>
+              <article><b>飞书班组协同</b><p>飞书承接卡片、审批、任务、多人确认和复盘记录，让调度判断有责任人、有时间、有回执。</p><small>操作：先生成草稿，企业上线后再接真实应用、审批定义、Task 和多维表格。</small></article>
+              <article><b>调控师指令</b><p>集中放置重算、生成卡片、生成审批、保存复盘和导出证据包等按钮，便于知道每次操作会留下什么记录。</p><small>操作：先重算，再生成草稿；所有按钮当前只改变演示状态或下载本地文件。</small></article>
+              <article><b>约束解释</b><p>把安全库存、设备健康、能源、公辅和负荷变化速度等限制列出来，说明为什么某个方案不能继续加码。</p><small>操作：先看红色硬约束，再看黄色待复核项；硬约束未解除时不要推进审批。</small></article>
+              <article><b>收益归因</b><p>把订单满足、液氨分配、能耗、库存占用和异常等因素拆开，避免把所有变化都算成平台收益。</p><small>操作：班末补齐实际值、人工原计划和外部因素后，再进入企业收益统计。</small></article>
+              <article><b>班次排产草案</b><p>把 24 小时建议拆成不同装置和时间段，帮助班前会和交接班理解“什么时候做什么”。</p><small>操作：把它当讨论稿，未经班长确认和岗位接令不能当作现场计划。</small></article>
+              <article><b>数据接口优先级与新鲜度</b><p>说明订单、MES、IoT、DCS 摘要、APC、设备和 Historian 哪些数据先接、多久更新、多久未更新需要降级。</p><small>操作：看到延迟、质量码或事实源异常时，先补数或退回人工，不要继续放大模型结果。</small></article>
+              <article><b>数字调度长问答</b><p>可追问“为什么不建议硝酸满负荷”“液氨涨价后保谁”“压机趋势恶化怎么办”，回答按事实、判断、边界、下一步组织。</p><small>操作：点击一个问题，再看答案中的依据和责任岗位。</small></article>
+              <article><b>岗位视图</b><p>调度员、班长、设备、安环看到同一份事实，但关注点不同：调度看协同，班长看确认，设备看趋势，安环看红线。</p><small>操作：切换岗位，观察任务重点如何变化。</small></article>
+              <article><b>导出当前方案证据包</b><p>下载一份 JSON 记录，包含输入快照、行情版本、门禁、物料平衡、动作单、接令状态和审计事件。</p><small>操作：点击导出；它是交接和验收证据，不会自动写入飞书、MES、DCS 或 SIS。</small></article>
+            </div>
+          </section>
+          <section class="guide-block">
+            <h3>几个必须先记住的词</h3>
+            <dl class="guide-glossary">
+              <div><dt>DCS</dt><dd>装置控制系统，负责局部调节、顺控、报警等；本平台不写入它。</dd></div>
+              <div><dt>SIS</dt><dd>安全仪表系统，负责安全联锁和保护；本平台不绕过它。</dd></div>
+              <div><dt>APC / RTO</dt><dd>先进控制和实时优化层，把批准后的目标转成受约束的控制目标；本平台只展示对接边界。</dd></div>
+              <div><dt>MES / ERP</dt><dd>MES 管生产计划和执行事实，ERP 管订单、价格和结算口径；企业上线时分别作为事实源。</dd></div>
+              <div><dt>Historian</dt><dd>生产历史数据库，用于回看真实负荷、库存、能耗和设备点位；未接入时平台不编造实际值。</dd></div>
+              <div><dt>影子运行</dt><dd>平台先给建议，现场仍按原流程生产，用真实结果比较建议是否可靠，确认后才进入小范围试点。</dd></div>
+              <div><dt>安全闸门</dt><dd>数据失真、设备风险或安环边界接近时，平台停止生成新经济方案，转人工和现场规程。</dd></div>
+              <div><dt>接令</dt><dd>责任岗位已看到并复核动作，不等同于阀门已动、负荷已变或装置已经执行。</dd></div>
+            </dl>
+          </section>
+          <section class="guide-block guide-boundary">
+            <h3>当前版本能做什么，不能做什么</h3>
+            <div class="guide-boundary-grid"><p><b>可以做</b><br />用样例数据回放场景、比较方案、解释依据、生成飞书协同草稿、导出证据包。</p><p><b>暂时不能做</b><br />直接读取云图实时生产数据、自动改变 DCS/SIS 参数、自动开停车、证明真实节约金额。</p></div>
+          </section>
+        </div>
+      </form>
+    </dialog>
+
     <dialog id="incidentDialog" class="action-dialog" aria-labelledby="incidentTitle">
       <form method="dialog">
         <header><span id="incidentLevel" class="severity">P1</span><div><h2 id="incidentTitle">事件处置</h2><p id="incidentSource"></p></div><button class="icon-close" value="cancel" aria-label="关闭">×</button></header>

@@ -58,6 +58,8 @@ python -m http.server 4173
 
 访问 `http://localhost:4173`。
 
+第一次接触合成氨或第一次使用页面时，先阅读 `docs/user-guide-for-beginners.md`；网页顶部的“使用说明”也提供逐项组件解释、上手顺序和术语表。
+
 24小时样例见 `data/dispatch_24h_balance_sample.csv` 和 `data/dispatch_24h_plan_sample.csv`；压机多变量回放见 `data/compressor_trend_replay_sample.csv`；接口联调字段见 `data/interface_field_matrix.csv`；软件对标见 `docs/enterprise-software-benchmark.md`。
 
 ## 提交材料

@@ -82,6 +82,12 @@ python -m http.server 4173
 - 在线方案稿：`https://www.feishu.cn/docx/AYyad50itooOPxxZpQacgSqIn2c`
 - 多维表格样例库：`https://www.feishu.cn/base/QzENbAkl1aYQGds8dBacqu6Inue`
 - Task v2任务清单：`https://applink.feishu.cn/client/todo/task_list?guid=2ab6c357-dfeb-4f75-9aa3-781dc7ac7244`
+
+## 线上展示
+
+- GitHub Pages：`https://zhijindeng.github.io/synthesis-ammonia/`
+- 线上页面只发布 `index.html` 和 `assets/`，提交材料、样例文档和个人材料不进入网页发布包。
+- 线上行情按钮保留价格闸门交互，但不伪造实时执行价；未配置企业后台行情网关时沿用上一有效版本，并提示企业接入边界。
 - Task v2验收任务`t136777`：`https://applink.feishu.cn/client/todo/detail?guid=44631b59-b834-47b1-a413-b751f2f291da&suite_entity_num=t136777`
 
 企业接入还需要自建应用权限、目标群机器人范围、审批定义`approval_code`、Aily知识源、事件订阅与回调配置。App Secret只存放在服务端凭据配置中，不进入前端、文档或Git历史。

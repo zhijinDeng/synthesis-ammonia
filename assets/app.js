@@ -55,7 +55,8 @@ function activeMarket() {
   return uiState.confirmedMarket;
 }
 
-const MARKET_GATEWAY_URL = "http://127.0.0.1:4174/api/market/snapshot";
+const IS_PUBLIC_DEMO = /(^|\.)github\.io$/i.test(window.location.hostname);
+const MARKET_GATEWAY_URL = IS_PUBLIC_DEMO ? "" : "http://127.0.0.1:4174/api/market/snapshot";
 
 function escapeMarketText(value) {
   return String(value ?? "").replace(/[&<>\"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[char]));
@@ -89,12 +90,14 @@ async function syncOfficialMarket() {
   uiState.officialMarket = { ...uiState.officialMarket, status: "syncing", note: "正在读取登记的官方公开源；不会改变液氨执行价格。" };
   renderOfficialMarket();
   try {
+    if (!MARKET_GATEWAY_URL) throw new Error("线上演示未配置企业行情网关");
     const response = await fetch(MARKET_GATEWAY_URL, { headers: { Accept: "application/json" } });
     if (!response.ok) throw new Error(`行情网关 HTTP ${response.status}`);
     uiState.officialMarket = await response.json();
     events.unshift({ title: "官方行情参考已核验", body: `${uiState.officialMarket.executionPriceStatus}；外部参考不自动写入调度建议。` });
   } catch (error) {
-    uiState.officialMarket = { ...uiState.officialMarket, status: "gateway_unavailable", sources: uiState.officialMarket.sources.map(source => source.status === "待联网" ? { ...source, status: "网关未启动", message: "请启动本地行情网关，或由企业部署后台适配服务" } : source), note: `官方参考未更新：${error.message}。沿用上一有效版本，液氨执行价仍需经营确认。` };
+    const fallbackMessage = IS_PUBLIC_DEMO ? "线上展示未配置企业行情网关；企业上线时由后台适配 ERP / 官方参考源" : "请启动本地行情网关，或由企业部署后台适配服务";
+    uiState.officialMarket = { ...uiState.officialMarket, status: "gateway_unavailable", sources: uiState.officialMarket.sources.map(source => source.status === "待联网" ? { ...source, status: IS_PUBLIC_DEMO ? "线上演示" : "网关未启动", message: fallbackMessage } : source), note: `官方参考未更新：${error.message}。沿用上一有效版本，液氨执行价仍需经营确认。` };
     events.unshift({ title: "官方行情未更新", body: uiState.officialMarket.note });
   }
   if (events.length > 6) events.pop();

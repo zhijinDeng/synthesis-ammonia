@@ -86,6 +86,8 @@ python -m http.server 4173
 ## 线上展示
 
 - GitHub Pages：`https://zhijindeng.github.io/synthesis-ammonia/`
+- 决赛 Demo 视频：`https://zhijindeng.github.io/synthesis-ammonia/media/yuntu-ammonia-final-demo.webm`
+- 飞书在线参赛方案：`https://larkcommunity.feishu.cn/docx/B88ydvoe2olqHJxlISQc6ZHPnZ6`
 - 线上页面只发布 `index.html` 和 `assets/`，提交材料、样例文档和个人材料不进入网页发布包。
 - 线上行情按钮保留价格闸门交互，但不伪造实时执行价；未配置企业后台行情网关时沿用上一有效版本，并提示企业接入边界。
 - Task v2验收任务`t136777`：`https://applink.feishu.cn/client/todo/detail?guid=44631b59-b834-47b1-a413-b751f2f291da&suite_entity_num=t136777`

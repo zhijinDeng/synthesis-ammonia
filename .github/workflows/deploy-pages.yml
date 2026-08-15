@@ -28,12 +28,13 @@ jobs:
         shell: bash
         run: |
           rm -rf _site
-          mkdir -p _site/assets
+          mkdir -p _site/assets _site/media
           cp index.html _site/index.html
           cp assets/app.js _site/assets/app.js
           cp assets/styles.css _site/assets/styles.css
           cp assets/process-map.svg _site/assets/process-map.svg
           cp assets/digital-shift-dispatcher.webp _site/assets/digital-shift-dispatcher.webp
+          cp docs/assets/yuntu-ammonia-final-demo.webm _site/media/yuntu-ammonia-final-demo.webm
           touch _site/.nojekyll
 
       - name: Configure Pages

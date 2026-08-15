@@ -8,7 +8,7 @@
     <meta name="description" content="面向合成氨产供销协同、稳产预警与班组执行跟踪的调度验收工作台" />
 
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="assets/styles.css" />
+    <link rel="stylesheet" href="assets/styles.css?v=20260815-03" />
   </head>
   <body>
     <header class="topbar">
@@ -203,19 +203,32 @@
               <h3>先把账对上</h3>
               <p>只接订单导出、MES 班次计划、罐区历史摘要和飞书协同记录，平台只读，不影响生产。</p>
               <dl><div><dt>主要功能</dt><dd>字段字典、数据质量检查、液氨平衡回放、责任岗位确认</dd></div><div><dt>交付结果</dt><dd>接口清单、样例数据、数据质量报告、企业口径确认表</dd></div></dl>
+              <button class="rollout-action" data-roadmap-stage="30" type="button">查看 30 天工作包</button>
             </article>
             <article class="rollout-card">
               <div class="rollout-top"><strong>60 天</strong><span>旁路回放</span></div>
               <h3>再验证建议是否靠谱</h3>
               <p>扩展生产历史数据库、设备和公用工程只读数据，与人工调度方案并行比较，不给控制系统下指令。</p>
               <dl><div><dt>主要功能</dt><dd>压机趋势复核、产供销三案比较、能源约束分析、人工方案对照</dd></div><div><dt>交付结果</dt><dd>有效班次回放、偏差报告、异常复盘、停用条件验证</dd></div></dl>
+              <button class="rollout-action" data-roadmap-stage="60" type="button">查看 60 天工作包</button>
             </article>
             <article class="rollout-card">
               <div class="rollout-top"><strong>90 天</strong><span>条件受控验证</span></div>
               <h3>最后才进入小闭环</h3>
               <p>覆盖不少于 30 个有效班次和三类典型场景，在企业批准的范围内把建议、飞书任务、MES 计划摘要和班末复盘串起来。</p>
               <dl><div><dt>主要功能</dt><dd>班长确认、专业会签、岗位接令、执行回传、收益归因</dd></div><div><dt>交付结果</dt><dd>试点验收报告、采纳/未采纳原因库、规则版本和推广建议</dd></div></dl>
+              <button class="rollout-action" data-roadmap-stage="90" type="button">查看 90 天工作包</button>
             </article>
+          </div>
+          <div class="rollout-detail" id="rolloutDetail" aria-live="polite">
+            <div class="rollout-detail-head"><span>当前展示</span><strong id="rolloutDetailTitle">30 天 · 数据校核</strong><em id="rolloutDetailStatus">建议起点</em></div>
+            <p id="rolloutDetailSummary">先确认数据和业务口径，所有接口只读，平台不影响现场生产。</p>
+            <div class="rollout-detail-grid">
+              <div><b>本阶段接入</b><span id="rolloutDetailInputs">订单、MES班次计划、罐区历史摘要、飞书协同记录</span></div>
+              <div><b>企业可以看到</b><span id="rolloutDetailOutputs">字段质量、液氨平衡、责任岗位和接口问题清单</span></div>
+              <div><b>通过门槛</b><span id="rolloutDetailGate">字段、单位、时间戳和责任人确认；不影响生产</span></div>
+              <div><b>明确不做</b><span id="rolloutDetailNo">不写DCS/SIS，不统计真实节约，不自动下达负荷</span></div>
+            </div>
           </div>
           <p class="data-caption rollout-note">90 天也不等于自动控制：DCS/SIS 继续负责控制和保护，平台只有在企业完成安全、生产、设备和经营验收后，才进入受控的小范围执行验证。</p>
         </section>
@@ -445,6 +458,6 @@
       </form>
     </dialog>
 
-    <script src="assets/app.js"></script>
+    <script src="assets/app.js?v=20260815-03"></script>
   </body>
 </html>

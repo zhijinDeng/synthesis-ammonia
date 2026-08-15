@@ -1467,6 +1467,59 @@ document.getElementById("openGuide").addEventListener("click", () => {
   guideDialog.showModal();
 });
 
+const rolloutDetails = {
+  "30": {
+    title: "30 天 · 数据校核",
+    status: "建议起点",
+    summary: "先确认数据和业务口径，所有接口只读，平台不影响现场生产。",
+    inputs: "订单、MES班次计划、罐区历史摘要、飞书协同记录",
+    outputs: "字段质量、液氨平衡、责任岗位和接口问题清单",
+    gate: "字段、单位、时间戳和责任人确认；不影响生产",
+    no: "不写DCS/SIS，不统计真实节约，不自动下达负荷"
+  },
+  "60": {
+    title: "60 天 · 旁路回放",
+    status: "验证建议",
+    summary: "把生产历史、设备和公辅只读数据接入，与人工调度方案并排回放。",
+    inputs: "生产历史数据库、压缩机趋势、热电公辅、能源和人工原计划",
+    outputs: "三案比较、趋势复核、偏差报告、异常复盘和停用条件",
+    gate: "有效班次回放稳定；建议与人工方案可同口径比较",
+    no: "不绕过班长和专业确认，不写控制参数，不把样例值当收益"
+  },
+  "90": {
+    title: "90 天 · 条件受控验证",
+    status: "企业批准后",
+    summary: "覆盖有效班次和典型场景，在企业批准范围内验证确认、执行回传和复盘闭环。",
+    inputs: "班长确认、专业会签、岗位接令、飞书任务、MES计划摘要和实际回传",
+    outputs: "验收报告、采纳/未采纳原因库、规则版本和推广建议",
+    gate: "不少于30个有效班次；安全、生产、设备和经营共同验收",
+    no: "不自动开停车，不替代DCS/SIS，不在未验收时扩大范围"
+  }
+};
+
+function renderRolloutDetail(stage) {
+  const detail = rolloutDetails[stage];
+  if (!detail) return;
+  document.querySelectorAll("[data-roadmap-stage]").forEach(button => {
+    const active = button.dataset.roadmapStage === stage;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+    button.closest(".rollout-card")?.classList.toggle("active", active);
+  });
+  document.getElementById("rolloutDetailTitle").textContent = detail.title;
+  document.getElementById("rolloutDetailStatus").textContent = detail.status;
+  document.getElementById("rolloutDetailSummary").textContent = detail.summary;
+  document.getElementById("rolloutDetailInputs").textContent = detail.inputs;
+  document.getElementById("rolloutDetailOutputs").textContent = detail.outputs;
+  document.getElementById("rolloutDetailGate").textContent = detail.gate;
+  document.getElementById("rolloutDetailNo").textContent = detail.no;
+}
+
+document.querySelectorAll("[data-roadmap-stage]").forEach(button => {
+  button.addEventListener("click", () => renderRolloutDetail(button.dataset.roadmapStage));
+});
+renderRolloutDetail("30");
+
 function updateShiftClock() {
 
   document.getElementById("shiftClock").textContent = new Date().toLocaleTimeString("zh-CN", { hour12: false });

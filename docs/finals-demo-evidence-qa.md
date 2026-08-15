@@ -22,7 +22,7 @@
 | 3:50-4:35 | 打开执行跟踪与班后复盘 | 四个岗位全部接令后才可进入执行跟踪；接令只代表收到并确认责任，不代表现场已经执行。未接生产历史数据库时，实际值保持为空。 | 动作单版本、接令人和时间、Historian回传状态、执行偏差、审核状态 |
 | 4:35-5:00 | 展示30/60/90天试点和验收表 | 30天校核四类离线或只读数据，60天做历史回放，90天覆盖不少于30个有效班次和三类场景。先通过安全、数据和流程必过项，再讨论效果指标。 | 数据清单、有效班次定义、验收口径、停用条件 |
 
-演示收束语：平台交付的不是一个替代操作员的自动控制器，而是一套能够把班次事实、调度判断、责任确认和执行结果串起来的工作方法。企业试点的第一步，是用真实班次检验它是否让调度更快、更稳、更容易复盘。
+演示收束语：我们交付的是一套面向生产运行管理层的调度工作方法，把班次事实、调度判断、责任确认和执行结果放在同一条可追溯链路上。企业试点先用真实班次检验三件事：调度是否更快，生产是否更稳，班后是否更容易复盘。
 
 补充动作：在当班工作区点击“导出当前方案证据包”。下载文件应包含输入快照、行情版本、门禁状态、24小时物料平衡、四岗位动作单、接令状态、飞书流转边界和审计事件。现场说明：这是可交接、可复核的本地 JSON 证据，不是自动上传，也不等同于飞书审批或生产执行。
 
@@ -162,6 +162,6 @@ MES承接计划和执行记录，APC处理装置内先进控制，RTO负责经�
 - `data/compressor_trend_replay_sample.csv`：压缩机趋势回放样例，包含基线、观察、复核、专业会签和演练停算线标签。标签用于验证流程分支，不替代企业设备阈值。
 - `data/interface_field_matrix.csv`：接口字段矩阵样例，记录阶段、来源系统、业务对象、字段、方向、频率、时间基准、质量规则、单位、责任专业和超时动作。
 - `data/evidence_package_schema.json`：方案证据包字段契约，约束输入快照、门禁、物料平衡、动作单、接令状态和审计字段；实际值在未接入 Historian 前必须保持为空。
-## Market source demonstration
+## 官方行情参考演示
 
-At 0:35-1:15, click “联网读取官方参考” and show the four source cards. Explain that public references support trend cross-checking, while the ERP or quotation version confirmed by the business owner is the only execution price. Show source, publication time, fetch time, unit, quality state, confirmer, and version. If the adapter is unavailable, keep the last valid version and do not create a new executable plan.
+在0:35-1:15点击“联网读取官方参考”，展示四张来源卡片。现场说明：公开资料用于趋势参考和交叉核验，只有经营人员确认的ERP或报价版本才能作为执行价。逐项展示来源、发布时间、读取时间、单位、质量状态、确认人和版本；如果适配器不可用，页面保留上一有效版本并停止生成新的可执行方案。

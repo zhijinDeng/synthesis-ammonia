@@ -1,6 +1,8 @@
 # 氨智领航调控师
 
-本仓库交付合成氨班次调度演示平台、样例数据、飞书协同链路和试点文档。当前页面是规则驱动的验收沙盘，不是已经接入企业数据的在线优化器。企业试点需确认订单、MES、生产历史数据库、设备与财务数据接口；系统不提供DCS/SIS写入能力，也不下达自动开停车指令。
+这是我们针对云图合成氨命题完成的班次调度平台原型。我们把问题收敛到调度员每天真正要做的取舍：液氨有限时，哪些下游先保、哪些装置降负荷，什么时候应该外采，什么时候应该接受停运损失；同时把设备趋势、公辅约束、班组接令和班后复盘放进同一条工作流程。
+
+当前页面使用可复现的验收样例，尚未接入云图现场数据。企业试点还需要确认订单、MES、生产历史数据库、设备和财务接口；平台不提供DCS/SIS写入能力，也不下达自动开停车指令。我们把这条边界写清楚，是为了让样例演示和现场生产责任可以分开核对。
 
 ## 解决的问题
 
@@ -78,12 +80,12 @@ python -m http.server 4173
 - Task v2验收任务`t136777`：`https://applink.feishu.cn/client/todo/detail?guid=44631b59-b834-47b1-a413-b751f2f291da&suite_entity_num=t136777`
 
 企业接入还需要自建应用权限、目标群机器人范围、审批定义`approval_code`、Aily知识源、事件订阅与回调配置。App Secret只存放在服务端凭据配置中，不进入前端、文档或Git历史。
-## Pricing and execution-price boundary
+## 行情口径与执行价闸门
 
-The platform separates public references from enterprise execution prices. National Bureau of Statistics production-material prices, Zhengzhou Commodity Exchange UR/SA data, and Ministry of Commerce commodity-price articles are reference or cross-check sources only. Liquid-ammonia and downstream-product prices used for dispatch economics must come from the enterprise ERP, sales quotation, or procurement settlement version.
+我们把公开行情和企业执行价分开处理。国家统计局生产资料价格、郑州商品交易所尿素/纯碱行情、商务部商品价格资料用于趋势参考和交叉核验；真正进入调度经济比较的液氨、硝酸及下游产品价格，必须来自企业ERP、销售报价或采购结算版本。
 
-`data/market_source_registry.json` records source, refresh cadence, URL, authority, and fallback rules. `scripts/market_gateway_server.mjs` is a local adapter on port `4174`; it exposes `/health` and `/api/market/snapshot`, returns auditable reference cards, and never writes DCS/SIS. The page action “联网读取官方参考” updates references only. An unconfirmed, stale, or incomplete price freezes the execution price and economic ranking until a business owner confirms product, region, unit, tax/freight basis, effective time, person, and version.
+`data/market_source_registry.json`记录来源、更新节奏、网址、权威性和异常处理规则。`scripts/market_gateway_server.mjs`是本地行情适配器，监听`4174`端口，只返回可核验的来源卡片，不写入DCS/SIS。页面上的“联网读取官方参考”只更新公开参考，不会替换企业执行价。价格未确认、已过期或口径不完整时，平台沿用上一有效版本，并冻结新的经济排序和可执行方案，直到经营人员确认产品、区域、单位、含税/运费口径、生效时间、确认人和版本。
 
-## Evidence package export
+## 方案证据包
 
-The action “导出当前方案证据包” downloads a local JSON handover artifact validated by `data/evidence_package_schema.json`. It records the scenario snapshot, execution-price version, safety and feasibility gates, material balance, cross-unit action sheet, Feishu handover state, and audit tail. The export is deliberately separate from platform write-back: it does not send data to Feishu, MES, DCS, or SIS. In a pilot, the same contract can be mapped to a Feishu Base review record and an MES plan summary after the approval callback returns; actual load, inventory, energy, and benefit remain blank until an approved Historian or enterprise fact source supplies them.
+点击“导出当前方案证据包”可以下载一份本地JSON交接文件，内容包括场景快照、执行价版本、安全和可行性闸门、液氨平衡、跨装置动作单、飞书流转状态和审计事件。它与平台写回分开：不会自动发送到飞书、MES、DCS或SIS。试点阶段可以在审批回调返回后，把同一份字段映射到飞书多维表格复盘记录和MES计划摘要；在Historian或企业认可的事实源接入前，实际负荷、库存、能耗和收益字段保持为空。
